@@ -68,7 +68,8 @@ class App extends React.Component<never, State> {
   getStateForAssistant(): object {
     const state = {
       game_state: {
-        playerTurn: this.state.playerTurn
+        players_turn: this.state.playerTurn,
+        game_status: 0,
       }
     }
     return state
