@@ -66,6 +66,11 @@ class App extends React.Component<never, State> {
   }
 
   getStateForAssistant(): object {
+    // Коды game_status
+    // игра продолжается == 0
+    // последний ход игрока был невалидным == 1
+    // победил игрок == 2
+    // победил ИИ == 3
     const state = {
       game_state: {
         players_turn: this.state.playerTurn,
