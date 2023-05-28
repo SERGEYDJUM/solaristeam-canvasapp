@@ -1,103 +1,173 @@
 import React, {FC} from "react"
 import styled from "styled-components"
-import {colors} from "@salutejs/plasma-tokens"
-import {TextL, TextM} from "@salutejs/plasma-ui"
+import {Layer, Line, Circle as KonvaCircle, Shape, Stage, Text} from "react-konva"
+
 type Props = {
   board: Array<Array<number>>,
   handleClick: (i: number, j: number) => void
 }
 
 const Container = styled.section`
-  margin: 14px;
-  display: grid;
-  grid-template-columns: repeat(15, 1fr);
-  grid-template-rows: repeat(15, 1fr);
-  border: 1px solid ${colors.secondary};
-  border-radius: 8px;
+  margin-top: 24px;
+  background-color: rgba(255,255,255,0.06);
+  padding: 24px;
+  border-radius: 16px;
 `
 
-const Cell = styled.div`
-  width: 40px;
-  height: 40px;
-  border: 1px solid ${colors.secondary};
-  
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: ${colors.primary};
+type ShapeParams = {
+  x: number,
+  y: number,
+  key: any
+}
 
-  &:nth-child(1) {
-    border-radius: 6px 0 0 0;
-  }
-  
-  &:nth-child(15) {
-    border-radius: 0 6px 0 0;
-  }
-
-  &:nth-child(211) {
-    border-radius: 0 0 0 6px;
-  }
-  
-  &:nth-child(225) {
-    border-radius: 0 0 6px 0;
-  }
-  
-  &:nth-child(15+n) {
-    border-top: none;
-  }
-`
-
-const Circle: FC<never> = () => (
-  <svg width="32px" height="32px" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg">
-    <circle
-      cx="16px"
-      cy="16px"
-      r="10px"
-      strokeWidth="4px"
-      stroke={
-        // colors.accent
-        "#4040FF"
-      }
-      fill="none"
-    />
-  </svg>
+const Circle: FC<ShapeParams> = ({x, y, key}: ShapeParams) => (
+  <KonvaCircle
+    x={x + 15}
+    y={y + 15}
+    key={key}
+    radius={7}
+    stroke="rgb(96, 96, 255)"
+    strokeWidth={4}
+  />
 )
 
-const Cross: FC<never> = () => (
-  <svg width="32px" height="32px" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M18.8,16l5.5-5.5c0.8-0.8,0.8-2,0-2.8l0,0C24,7.3,23.5,7,23,7c-0.5,0-1,0.2-1.4,0.6L16,13.2l-5.5-5.5  c-0.8-0.8-2.1-0.8-2.8,0C7.3,8,7,8.5,7,9.1s0.2,1,0.6,1.4l5.5,5.5l-5.5,5.5C7.3,21.9,7,22.4,7,23c0,0.5,0.2,1,0.6,1.4  C8,24.8,8.5,25,9,25c0.5,0,1-0.2,1.4-0.6l5.5-5.5l5.5,5.5c0.8,0.8,2.1,0.8,2.8,0c0.8-0.8,0.8-2.1,0-2.8L18.8,16z"
-      fill={
-        // colors.accent
-        "#FF4040"
-      }
-    />
-  </svg>
+const Cross: FC<ShapeParams> = ({x, y, key}: ShapeParams) => (
+  <Shape
+    x={x}
+    y={y}
+    key={key}
+    sceneFunc={(context, shape) => {
+      context.beginPath();
+      context.moveTo(9, 9);
+      context.lineCap = "round"
+      context.lineTo(23, 23);
+      context.moveTo(23, 9)
+      context.lineTo(9, 23);
+      context.fillStrokeShape(shape);
+    }}
+    stroke="rgb(255, 96, 96)"
+    strokeWidth={4}
+  />
 )
 
 const Board: FC<Props> = ({board, handleClick}: Props) => {
+  const handleClickCell = (e: any) => {
+    console.log(e)
+    const i = Math.floor(e.evt.layerX / 30)
+    const j = Math.floor(e.evt.layerY / 30)
+    console.log(i, j)
+    handleClick(i - 1, j - 1)
+  }
+
+  const pieces = []
+  const decorations = []
+
+  for (let i = 1; i < 15; i++) {
+    decorations.push(
+      <Line
+        key={`line-v-${i}`}
+        x={30 + i * 30}
+        lineCap={"round"}
+        y={30}
+        points={[0, 0, 0, 450]}
+        stroke="rgba(255,255,255,0.4)"
+        strokeWidth={2}
+      />
+    )
+  }
+
+  for (let i = 1; i < 15; i++) {
+    decorations.push(
+      <Line
+        key={`line-h-${i}`}
+        x={30}
+        lineCap={"round"}
+        y={30 + i * 30}
+        points={[0, 0, 450, 0]}
+        stroke="rgba(255,255,255,0.4)"
+        strokeWidth={2}
+      />
+    )
+  }
+
+  for (let i = 1; i <= 15; i++) {
+    decorations.push(
+      <Text
+        fontFamily="SB Sans Text"
+        key={`text-v-${i}`}
+        y={0}
+        x={i * 30}
+        width={30}
+        height={30}
+        align="center"
+        verticalAlign="middle"
+        fill={"rgba(255,255,255,0.4)"}
+        text={`${i}`}
+      />
+    )
+  }
+
+  for (let i = 1; i <= 15; i++) {
+    decorations.push(
+      <Text
+        fontFamily="SB Sans Text"
+        key={`text-h-${i}`}
+        y={i * 30}
+        x={0}
+        width={30}
+        height={30}
+        align="center"
+        verticalAlign="middle"
+        fill={"rgba(255,255,255,0.4)"}
+        text={`${i}`}
+      />
+    )
+  }
+
+  // decorations.push(
+  //   <Rect
+  //     key={`border`}
+  //     x={1}
+  //     y={1}
+  //     width={488}
+  //     height={488}
+  //     stroke={"rgba(255,255,255,0.4)"}
+  //     strokeWidth={1.5}
+  //     cornerRadius={12}
+  //   />
+  // )
+
+  for (let i = 0; i < 15; i++) {
+    for (let j = 0; j < 15; j++) {
+      if (board[i][j] === 1) {
+        pieces.push(
+          <Cross
+            x={30 + i * 30}
+            key={`cell-${i}-${j}`}
+            y={30 + j * 30}
+          />
+        )
+      } else if (board[i][j] === -1) {
+        pieces.push(
+          <Circle
+            x={30 + i * 30}
+            key={`cell-${i}-${j}`}
+            y={30 + j * 30}
+          />
+        )
+      }
+    }
+  }
+
   return (
-    <div
-      style={{
-        display: "flex", flexDirection: "column", marginTop: 24,
-        alignItems: "center"}}
-    >
-      <TextL>
-        Ход игрока
-      </TextL>
-      <Container>
-        {
-          board.map((row, i) => (
-            row.map((cell, j) => (
-              <Cell key={`${i}-${j}`} onClick={() => handleClick(i, j)}>
-                {cell !== 0 && (cell == 1 ? <Cross/> : <Circle/>)}
-              </Cell>
-            )
-            )
-          ))
-        }
-      </Container>
-    </div>
+    <Container>
+      <Stage width={490} height={490} onClick={handleClickCell}>
+        <Layer>
+          {decorations}
+          {pieces}
+        </Layer>
+      </Stage>
+    </Container>
   )
 }
 
