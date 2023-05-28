@@ -80,7 +80,7 @@ class App extends React.Component<never, State> {
     if (action) {
       switch (action.type) {
         case 'player_move':
-          return this.handleClick(action.move.x, action.move.y, true)
+          return this.handleClick(action.move.x - 1, action.move.y - 1, true)
         case 'reset_game':
           return this.resetGame()
         default:
@@ -98,9 +98,9 @@ class App extends React.Component<never, State> {
     }
   }
 
-  handleClick(i: number, j: number, player: boolean) {
+  handleClick(i: number, j: number, actor_is_player: boolean) {
     console.log("Attempted click: ", i, j);
-    if (player == this.state.playerTurn) {
+    if (actor_is_player == this.state.playerTurn) {
       const board = this.state.board.slice();
       board[i][j] = this.state.playerTurn ? 1 : -1;
       this.setState({
