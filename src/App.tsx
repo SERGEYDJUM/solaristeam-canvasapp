@@ -1,9 +1,9 @@
 import React from "react"
 import styled, { createGlobalStyle } from "styled-components"
 import { text, background, gradient } from "@salutejs/plasma-tokens"
-import {createAssistant, createSmartappDebugger} from "@salutejs/client"
-import {AssistantClient} from "@salutejs/client"
-import {Board} from "./components"
+import { createAssistant, createSmartappDebugger } from "@salutejs/client"
+import { AssistantClient } from "@salutejs/client"
+import { Board } from "./components"
 
 const MainStyles = createGlobalStyle`
   body {
@@ -21,11 +21,16 @@ const Container = styled.div`
   justify-content: center;
 `
 
+interface Action {
+  type: string,
+  move: { x: number, y: number }
+}
+
 const initializeAssistant = (getState: () => object): AssistantClient => {
   if (import.meta.env.DEV) {
     return createSmartappDebugger({
-      token: import.meta.env.VITE_REACT_APP_TOKEN as string ?? "",
-      initPhrase: `Запусти ${import.meta.env.VITE_REACT_APP_SMARTAPP}`,
+      token: import.meta.env.VITE_APP_TOKEN as string ?? "",
+      initPhrase: `Запусти ${import.meta.env.VITE_APP_SMARTAPP}`,
       getState,
     }) as AssistantClient
   }
@@ -43,8 +48,6 @@ class App extends React.Component<never, State> {
 
   constructor(props: never) {
     super(props);
-
-    this.assistant = initializeAssistant(() => this.getStateForAssistant())
     this.state = {
       board: Array(15)
         .fill(null)
@@ -52,14 +55,49 @@ class App extends React.Component<never, State> {
       playerTurn: true,
     }
 
+    this.assistant = initializeAssistant(() => this.getStateForAssistant())
+    this.assistant.on("data", (event) => {
+      console.log(`assistant.on(data)`, event);
+      const { action } = event
+      this.dispatchAssistantAction(action);
+    });
+
     this.handleClick.bind(this)
   }
 
   getStateForAssistant(): object {
-    return {}
+    const state = {
+      game_state: {
+        playerTurn: this.state
+      }
+    }
+    return state
   }
 
-  handleClick(i, j) {
+  dispatchAssistantAction(action: Action) {
+    console.log("Action dispatching: ", action)
+    if (action) {
+      switch (action.type) {
+        case 'player_move':
+          return this.handleClick(action.move.x, action.move.y)
+        case 'reset_game':
+          return this.resetGame()
+        default:
+          throw new Error()
+      }
+    }
+  }
+
+  resetGame() {
+    this.state = {
+      board: Array(15)
+        .fill(null)
+        .map(() => Array(15).fill(0)),
+      playerTurn: true,
+    }
+  }
+
+  handleClick(i: number, j: number) {
     console.log(i, j);
     const board = this.state.board.slice();
     board[i][j] = this.state.playerTurn ? 1 : -1;
