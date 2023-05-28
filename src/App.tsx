@@ -1,18 +1,8 @@
 import React from "react"
-import styled, { createGlobalStyle } from "styled-components"
-import { text, background, gradient } from "@salutejs/plasma-tokens"
+import styled from "styled-components"
 import {createAssistant, createSmartappDebugger} from "@salutejs/client"
 import {AssistantClient} from "@salutejs/client"
 import {Board} from "./components"
-
-const MainStyles = createGlobalStyle`
-  body {
-    color: ${text};
-    background-color: ${background};
-    background-image: ${gradient};
-    margin: 0;
-  }
-`
 
 const Container = styled.div`
   display: flex;
@@ -80,7 +70,6 @@ class App extends React.Component<never, State> {
             handleClick={(i, j) => this.handleClick(i, j)}
           />
         </Container>
-        <MainStyles />
       </>
     )
   }
