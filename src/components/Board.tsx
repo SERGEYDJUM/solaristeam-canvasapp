@@ -10,7 +10,13 @@ type Props = {
 const Container = styled.section`
   margin-top: 24px;
   background-color: rgba(255,255,255,0.06);
+  
   padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  
   border-radius: 16px;
   max-width: calc(100vw - 48px);
   width: 538px;
@@ -153,13 +159,13 @@ const Board: FC<Props> = ({board, handleClick}: Props) => {
 
   useEffect(() => {
     let timeoutId = null
-    setScale((containerRef.current?.offsetWidth / 538) || 1)
+    setScale((containerRef.current?.offsetWidth / 548) || 1)
     const resizeListener = () => {
       clearTimeout(timeoutId)
       timeoutId = setTimeout(() => {
         if (!containerRef.current?.offsetWidth)
           return
-        setScale((containerRef.current?.offsetWidth / 538) || 1)
+        setScale((containerRef.current?.offsetWidth / 548) || 1)
       }, 100)
     };
     window.addEventListener('resize', resizeListener)
