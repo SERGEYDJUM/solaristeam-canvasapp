@@ -1,4 +1,4 @@
-import React, {FC} from "react"
+import React, {FC, useEffect, useRef, useState} from "react"
 import styled from "styled-components"
 import {Layer, Line, Circle as KonvaCircle, Shape, Stage, Text} from "react-konva"
 
@@ -12,6 +12,8 @@ const Container = styled.section`
   background-color: rgba(255,255,255,0.06);
   padding: 24px;
   border-radius: 16px;
+  max-width: calc(100vw - 48px);
+  width: 538px;
 `
 
 type ShapeParams = {
@@ -25,7 +27,7 @@ const Circle: FC<ShapeParams> = ({x, y, key}: ShapeParams) => (
     x={x + 15}
     y={y + 15}
     key={key}
-    radius={7}
+    radius={8}
     stroke="rgb(96, 96, 255)"
     strokeWidth={4}
   />
@@ -38,11 +40,11 @@ const Cross: FC<ShapeParams> = ({x, y, key}: ShapeParams) => (
     key={key}
     sceneFunc={(context, shape) => {
       context.beginPath();
-      context.moveTo(9, 9);
+      context.moveTo(8, 8);
       context.lineCap = "round"
-      context.lineTo(23, 23);
-      context.moveTo(23, 9)
-      context.lineTo(9, 23);
+      context.lineTo(22, 22);
+      context.moveTo(22, 8)
+      context.lineTo(8, 22);
       context.fillStrokeShape(shape);
     }}
     stroke="rgb(255, 96, 96)"
@@ -52,12 +54,15 @@ const Cross: FC<ShapeParams> = ({x, y, key}: ShapeParams) => (
 
 const Board: FC<Props> = ({board, handleClick}: Props) => {
   const handleClickCell = (e: any) => {
-    console.log(e)
-    const i = Math.floor(e.evt.layerX / 30)
-    const j = Math.floor(e.evt.layerY / 30)
-    console.log(i, j)
+    console.log(e.evt)
+
+    const i = Math.floor( e.evt.layerX / 30 / scale)
+    const j = Math.floor(e.evt.layerY / 30 / scale)
     handleClick(i - 1, j - 1)
   }
+
+  const [scale, setScale] = useState<number>(1)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   const pieces = []
   const decorations = []
@@ -71,7 +76,7 @@ const Board: FC<Props> = ({board, handleClick}: Props) => {
         y={30}
         points={[0, 0, 0, 450]}
         stroke="rgba(255,255,255,0.4)"
-        strokeWidth={2}
+        strokeWidth={1}
       />
     )
   }
@@ -85,7 +90,7 @@ const Board: FC<Props> = ({board, handleClick}: Props) => {
         y={30 + i * 30}
         points={[0, 0, 450, 0]}
         stroke="rgba(255,255,255,0.4)"
-        strokeWidth={2}
+        strokeWidth={1}
       />
     )
   }
@@ -93,7 +98,7 @@ const Board: FC<Props> = ({board, handleClick}: Props) => {
   for (let i = 1; i <= 15; i++) {
     decorations.push(
       <Text
-        fontFamily="SB Sans Text"
+        fontFamily="SB Sans Display"
         key={`text-v-${i}`}
         y={0}
         x={i * 30}
@@ -124,19 +129,6 @@ const Board: FC<Props> = ({board, handleClick}: Props) => {
     )
   }
 
-  // decorations.push(
-  //   <Rect
-  //     key={`border`}
-  //     x={1}
-  //     y={1}
-  //     width={488}
-  //     height={488}
-  //     stroke={"rgba(255,255,255,0.4)"}
-  //     strokeWidth={1.5}
-  //     cornerRadius={12}
-  //   />
-  // )
-
   for (let i = 0; i < 15; i++) {
     for (let j = 0; j < 15; j++) {
       if (board[i][j] === 1) {
@@ -159,9 +151,33 @@ const Board: FC<Props> = ({board, handleClick}: Props) => {
     }
   }
 
+  useEffect(() => {
+    let timeoutId = null
+    setScale((containerRef.current?.offsetWidth / 538) || 1)
+    const resizeListener = () => {
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        if (!containerRef.current?.offsetWidth)
+          return
+        setScale((containerRef.current?.offsetWidth / 538) || 1)
+      }, 100)
+    };
+    window.addEventListener('resize', resizeListener)
+
+    return () => {
+      window.removeEventListener('resize', resizeListener);
+    }
+  }, [])
+
+
   return (
-    <Container>
-      <Stage width={490} height={490} onClick={handleClickCell}>
+    <Container ref={containerRef}>
+      <Stage
+        width={490 * scale}
+        height={490 * scale}
+        scale={{x: scale, y: scale}}
+        onClick={handleClickCell}
+      >
         <Layer>
           {decorations}
           {pieces}
