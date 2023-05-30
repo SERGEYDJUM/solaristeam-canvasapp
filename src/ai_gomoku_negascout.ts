@@ -1,16 +1,16 @@
 var crypto = require('crypto');
-const Rows: number = 15, Columns: number = 15;  // Размер поля
-let Table_hash: number[][][] = []; // Таблица для хранения хэша где [номер строки][номер столбца][-1 если для игрока, 1 если для ИИ]
-Table_init(); // Инициализация Table_hash
-const IS_WIN: boolean = false; // Флаг победного хода
-const Cache = new Map(); // Кэш
-const State_Cache = new Map(); // Состояние кэша
-const MaximumDepth = 4; // Максимальная глубина на которую будет вестись поиск
+const Rows: number = 15, Columns: number = 15;  // Р Р°Р·РјРµСЂ РїРѕР»СЏ
+let Table_hash: number[][][] = []; // РўР°Р±Р»РёС†Р° РґР»СЏ С…СЂР°РЅРµРЅРёСЏ С…СЌС€Р° РіРґРµ [РЅРѕРјРµСЂ СЃС‚СЂРѕРєРё][РЅРѕРјРµСЂ СЃС‚РѕР»Р±С†Р°][-1 РµСЃР»Рё РґР»СЏ РёРіСЂРѕРєР°, 1 РµСЃР»Рё РґР»СЏ РР]
+Table_init(); // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ Table_hash
+const IS_WIN: boolean = false; // Р¤Р»Р°Рі РїРѕР±РµРґРЅРѕРіРѕ С…РѕРґР°
+const Cache = new Map(); // РљСЌС€
+const State_Cache = new Map(); // РЎРѕСЃС‚РѕСЏРЅРёРµ РєСЌС€Р°
+const MaximumDepth = 4; // РњР°РєСЃРёРјР°Р»СЊРЅР°СЏ РіР»СѓР±РёРЅР° РЅР° РєРѕС‚РѕСЂСѓСЋ Р±СѓРґРµС‚ РІРµСЃС‚РёСЃСЊ РїРѕРёСЃРє
 
-/* Указаны стоимости блоков ячеек. Они бывают открытые и полуоткрытые.
- * откртыте состояния это когда нет соседей противников, например открытая тройка _ооо_
- * полуоткрытое состояние когда есть с одной стороны сосед, например полуоткрытая тройка хооо_
- открытые состояния ценятся больше*/
+/* РЈРєР°Р·Р°РЅС‹ СЃС‚РѕРёРјРѕСЃС‚Рё Р±Р»РѕРєРѕРІ СЏС‡РµРµРє. РћРЅРё Р±С‹РІР°СЋС‚ РѕС‚РєСЂС‹С‚С‹Рµ Рё РїРѕР»СѓРѕС‚РєСЂС‹С‚С‹Рµ.
+ * РѕС‚РєСЂС‚С‹С‚Рµ СЃРѕСЃС‚РѕСЏРЅРёСЏ СЌС‚Рѕ РєРѕРіРґР° РЅРµС‚ СЃРѕСЃРµРґРµР№ РїСЂРѕС‚РёРІРЅРёРєРѕРІ, РЅР°РїСЂРёРјРµСЂ РѕС‚РєСЂС‹С‚Р°СЏ С‚СЂРѕР№РєР° _РѕРѕРѕ_
+ * РїРѕР»СѓРѕС‚РєСЂС‹С‚РѕРµ СЃРѕСЃС‚РѕСЏРЅРёРµ РєРѕРіРґР° РµСЃС‚СЊ СЃ РѕРґРЅРѕР№ СЃС‚РѕСЂРѕРЅС‹ СЃРѕСЃРµРґ, РЅР°РїСЂРёРјРµСЂ РїРѕР»СѓРѕС‚РєСЂС‹С‚Р°СЏ С‚СЂРѕР№РєР° С…РѕРѕРѕ_
+ РѕС‚РєСЂС‹С‚С‹Рµ СЃРѕСЃС‚РѕСЏРЅРёСЏ С†РµРЅСЏС‚СЃСЏ Р±РѕР»СЊС€Рµ*/
 const OpenOne: number = 10;
 const CloseOne: number = 1;
 const OpenTwo: number = 100;
@@ -21,7 +21,7 @@ const OpenFour: number = 10000;
 const CloseFour: number = 1000;
 const Five: number = 100000;
 
-//Проверяем, вляется ли линия победной (5 подряд идущих значений)
+//РџСЂРѕРІРµСЂСЏРµРј, РІР»СЏРµС‚СЃСЏ Р»Рё Р»РёРЅРёСЏ РїРѕР±РµРґРЅРѕР№ (5 РїРѕРґСЂСЏРґ РёРґСѓС‰РёС… Р·РЅР°С‡РµРЅРёР№)
 function check_directions(line: number[]) {
     for (let i: number = 0; i < line.length - 4; i++) {
         if (line[i] !== 0) {
@@ -33,27 +33,27 @@ function check_directions(line: number[]) {
     return false;
 }
 
-//Возвращаем массив всех возможных линий из точки x, y
+//Р’РѕР·РІСЂР°С‰Р°РµРј РјР°СЃСЃРёРІ РІСЃРµС… РІРѕР·РјРѕР¶РЅС‹С… Р»РёРЅРёР№ РёР· С‚РѕС‡РєРё x, y
 function get_lines(board: number[][], x: number, y: number) {
     const lines: number[][] = [[], [], [], []];
     for (let i: number = -4; i < 5; i++) {
         if (x + i >= 0 && x + i <= Rows - 1) {
-            lines[0].push(board[x + i][y]) // вертикаль
+            lines[0].push(board[x + i][y]) // РІРµСЂС‚РёРєР°Р»СЊ
             if (y + i >= 0 && y + i <= Columns - 1) {
-                lines[2].push(board[x + i][y + i]) // диагональ
+                lines[2].push(board[x + i][y + i]) // РґРёР°РіРѕРЅР°Р»СЊ
             }
         }
         if (y + i >= 0 && y + i <= Columns - 1) {
-            lines[1].push(board[x][y + i]) // горизонталь
+            lines[1].push(board[x][y + i]) // РіРѕСЂРёР·РѕРЅС‚Р°Р»СЊ
             if (x - i >= 0 && x - i <= Rows - 1) {
-                lines[3].push(board[x - i][y + i]) // анти-диагональ
+                lines[3].push(board[x - i][y + i]) // Р°РЅС‚Рё-РґРёР°РіРѕРЅР°Р»СЊ
             }
         }
     }
     return lines
 }
 
-//Проверка победы после этого хода, из точки x, y
+//РџСЂРѕРІРµСЂРєР° РїРѕР±РµРґС‹ РїРѕСЃР»Рµ СЌС‚РѕРіРѕ С…РѕРґР°, РёР· С‚РѕС‡РєРё x, y
 function check_win(board: number[][], x: number, y: number) {
     const lines: number[][] = get_lines(board, x, y)
     for (let i = 0; i < 4; i++) {
@@ -64,8 +64,8 @@ function check_win(board: number[][], x: number, y: number) {
     return false;
 }
 
-/*Создание границ в которых мы будем осуществлять поиск
- Это прямоугольник внутри которого находятся все закрашенные клетки*/
+/*РЎРѕР·РґР°РЅРёРµ РіСЂР°РЅРёС† РІ РєРѕС‚РѕСЂС‹С… РјС‹ Р±СѓРґРµРј РѕСЃСѓС‰РµСЃС‚РІР»СЏС‚СЊ РїРѕРёСЃРє
+ Р­С‚Рѕ РїСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРє РІРЅСѓС‚СЂРё РєРѕС‚РѕСЂРѕРіРѕ РЅР°С…РѕРґСЏС‚СЃСЏ РІСЃРµ Р·Р°РєСЂР°С€РµРЅРЅС‹Рµ РєР»РµС‚РєРё*/
 function create_limits(board: number[][]) {
     let min_x: number = Rows;
     let min_y: number = Columns;
@@ -81,8 +81,8 @@ function create_limits(board: number[][]) {
             }
         }
     }
-    // В дальнейшем в качестве перспективных клеток рассматриваются клетки внутри и в радиусе 2 клеток
-    // Поэтому если граница выходит за прямоугольник [[2, 2], [2, Columns - 3], [Rows - 3, Colums - 3], [Rows - 3, 2]] ее обрезаем
+    // Р’ РґР°Р»СЊРЅРµР№С€РµРј РІ РєР°С‡РµСЃС‚РІРµ РїРµСЂСЃРїРµРєС‚РёРІРЅС‹С… РєР»РµС‚РѕРє СЂР°СЃСЃРјР°С‚СЂРёРІР°СЋС‚СЃСЏ РєР»РµС‚РєРё РІРЅСѓС‚СЂРё Рё РІ СЂР°РґРёСѓСЃРµ 2 РєР»РµС‚РѕРє
+    // РџРѕСЌС‚РѕРјСѓ РµСЃР»Рё РіСЂР°РЅРёС†Р° РІС‹С…РѕРґРёС‚ Р·Р° РїСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРє [[2, 2], [2, Columns - 3], [Rows - 3, Colums - 3], [Rows - 3, 2]] РµРµ РѕР±СЂРµР·Р°РµРј
     min_x = Math.max(min_x, 2)
     min_y = Math.max(min_y, 2)
     max_x = Math.min(max_x, Rows - 3)
@@ -90,7 +90,7 @@ function create_limits(board: number[][]) {
     return [min_x, min_y, max_x, max_y]
 }
 
-// Изменение границ в которых мы будем осуществлять поиск
+// РР·РјРµРЅРµРЅРёРµ РіСЂР°РЅРёС† РІ РєРѕС‚РѕСЂС‹С… РјС‹ Р±СѓРґРµРј РѕСЃСѓС‰РµСЃС‚РІР»СЏС‚СЊ РїРѕРёСЃРє
 function change_limits(limits: number[], i:number, j:number) {
     let min_x: number = limits[0];
     let min_y: number = limits[1];
@@ -109,37 +109,37 @@ function change_limits(limits: number[], i:number, j:number) {
     return [min_x, min_y, max_x, max_y]
 }
 
-//Генерация 32-битного беззнакового целого числа
+//Р“РµРЅРµСЂР°С†РёСЏ 32-Р±РёС‚РЅРѕРіРѕ Р±РµР·Р·РЅР°РєРѕРІРѕРіРѕ С†РµР»РѕРіРѕ С‡РёСЃР»Р°
 function random32() {
     let o = new Uint32Array(1);
     crypto.getRandomValues(o);
     return o[0];
 }
 
-//Хэширование Зобриста
+//РҐСЌС€РёСЂРѕРІР°РЅРёРµ Р—РѕР±СЂРёСЃС‚Р°
 function Table_init() {
     for (let i: number = 0; i < Rows; i++) {
         Table_hash[i] = [];
         for (let j: number = 0; j < Columns; j++) {
             Table_hash[i][j] = []
-            Table_hash[i][j][0] = random32(); // 32-битное случайное число
+            Table_hash[i][j][0] = random32(); // 32-Р±РёС‚РЅРѕРµ СЃР»СѓС‡Р°Р№РЅРѕРµ С‡РёСЃР»Рѕ
             Table_hash[i][j][1] = random32();
         }
     }
 }
 
-//Хеширование всей доски
+//РҐРµС€РёСЂРѕРІР°РЅРёРµ РІСЃРµР№ РґРѕСЃРєРё
 function hash(board: number[][]) {
     let h: number = 0;
     let p: number;
     for (let i = 0; i < Rows; i++) {
         for (let j = 0; j < Columns; j++) {
             const board_value = board[i][j];
-            if (board_value !== 0) { //игнорируем пустые клетки
+            if (board_value !== 0) { //РёРіРЅРѕСЂРёСЂСѓРµРј РїСѓСЃС‚С‹Рµ РєР»РµС‚РєРё
                 if (board_value === -1) {
-                    p = 0  //игрок 0 - противник
+                    p = 0  //РёРіСЂРѕРє 0 - РїСЂРѕС‚РёРІРЅРёРє
                 } else {
-                    p = 1 //игрок 1 - свои
+                    p = 1 //РёРіСЂРѕРє 1 - СЃРІРѕРё
                 }
                 h = h ^ Table_hash[i][j][p];
             }
@@ -148,8 +148,8 @@ function hash(board: number[][]) {
     return h;
 }
 
-//Обновление хэша
-function update_hash(hash: number, player, x: number, y: number) { //Обновляем хэш
+//РћР±РЅРѕРІР»РµРЅРёРµ С…СЌС€Р°
+function update_hash(hash: number, player, x: number, y: number) { //РћР±РЅРѕРІР»СЏРµРј С…СЌС€
     if (player === -1) {
         player = 0
     } else {
@@ -159,7 +159,7 @@ function update_hash(hash: number, player, x: number, y: number) { //Обновляем х
     return hash
 }
 
-// Проверяет, является ли клетка удаленной, если в радиусе 2 клеток у клетки нет соседей, то она не перспективная
+// РџСЂРѕРІРµСЂСЏРµС‚, СЏРІР»СЏРµС‚СЃСЏ Р»Рё РєР»РµС‚РєР° СѓРґР°Р»РµРЅРЅРѕР№, РµСЃР»Рё РІ СЂР°РґРёСѓСЃРµ 2 РєР»РµС‚РѕРє Сѓ РєР»РµС‚РєРё РЅРµС‚ СЃРѕСЃРµРґРµР№, С‚Рѕ РѕРЅР° РЅРµ РїРµСЂСЃРїРµРєС‚РёРІРЅР°СЏ
 function is_remote_cell(board: number[][], x: number, y: number) {
     for (let i: number = x - 2; i <= y + 2; i++) {
         if (i < 0 || i >= Rows)
@@ -174,12 +174,12 @@ function is_remote_cell(board: number[][], x: number, y: number) {
     return true;
 }
 
-//В зависимости от параметра seq направлению дается приоритет
+//Р’ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ РїР°СЂР°РјРµС‚СЂР° seq РЅР°РїСЂР°РІР»РµРЅРёСЋ РґР°РµС‚СЃСЏ РїСЂРёРѕСЂРёС‚РµС‚
 function evalff(seq: number) {
     switch (seq) {
         case 0:
             return 7;
-        // Важно заполнить свое перспектиное напрвление
+        // Р’Р°Р¶РЅРѕ Р·Р°РїРѕР»РЅРёС‚СЊ СЃРІРѕРµ РїРµСЂСЃРїРµРєС‚РёРЅРѕРµ РЅР°РїСЂРІР»РµРЅРёРµ
         case 1:
             return 35;
         case 2:
@@ -188,7 +188,7 @@ function evalff(seq: number) {
             return 15000;
         case 4:
             return 800000;
-        // Закрыть перспективное направление для соперника, чуть менее важно
+        // Р—Р°РєСЂС‹С‚СЊ РїРµСЂСЃРїРµРєС‚РёРІРЅРѕРµ РЅР°РїСЂР°РІР»РµРЅРёРµ РґР»СЏ СЃРѕРїРµСЂРЅРёРєР°, С‡СѓС‚СЊ РјРµРЅРµРµ РІР°Р¶РЅРѕ
         case -1:
             return 15;
         case -2:
@@ -197,34 +197,34 @@ function evalff(seq: number) {
             return 1800;
         case -4:
             return 100000;
-        // Самое бесперспективное, направление в котором есть и свои и чужие
+        // РЎР°РјРѕРµ Р±РµСЃРїРµСЂСЃРїРµРєС‚РёРІРЅРѕРµ, РЅР°РїСЂР°РІР»РµРЅРёРµ РІ РєРѕС‚РѕСЂРѕРј РµСЃС‚СЊ Рё СЃРІРѕРё Рё С‡СѓР¶РёРµ
         case 17:
             return 0; 
     }
 }
 
-//Расчет коэфицента по которому высчитывается перспективность данной линии в зависимости от того, сколько своих и вражеских клеток на линии
+//Р Р°СЃС‡РµС‚ РєРѕСЌС„РёС†РµРЅС‚Р° РїРѕ РєРѕС‚РѕСЂРѕРјСѓ РІС‹СЃС‡РёС‚С‹РІР°РµС‚СЃСЏ РїРµСЂСЃРїРµРєС‚РёРІРЅРѕСЃС‚СЊ РґР°РЅРЅРѕР№ Р»РёРЅРёРё РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ С‚РѕРіРѕ, СЃРєРѕР»СЊРєРѕ СЃРІРѕРёС… Рё РІСЂР°Р¶РµСЃРєРёС… РєР»РµС‚РѕРє РЅР° Р»РёРЅРёРё
 function get_seq(y: number, e: number) {
     if (y + e === 0) {
         return 0;
     }
     if (y !== 0 && e === 0) {
-        return y // Есть только твои, значит для тебя перспетивное
+        return y // Р•СЃС‚СЊ С‚РѕР»СЊРєРѕ С‚РІРѕРё, Р·РЅР°С‡РёС‚ РґР»СЏ С‚РµР±СЏ РїРµСЂСЃРїРµС‚РёРІРЅРѕРµ
     }
     if (y === 0 && e !== 0) {
-        return -e // Есть только чужие, значит перспективно для противника
+        return -e // Р•СЃС‚СЊ С‚РѕР»СЊРєРѕ С‡СѓР¶РёРµ, Р·РЅР°С‡РёС‚ РїРµСЂСЃРїРµРєС‚РёРІРЅРѕ РґР»СЏ РїСЂРѕС‚РёРІРЅРёРєР°
     }
     if (y !== 0 && e !== 0) {
         return 17
     }
 }
 
-//Оценка выгодности направления
+//РћС†РµРЅРєР° РІС‹РіРѕРґРЅРѕСЃС‚Рё РЅР°РїСЂР°РІР»РµРЅРёСЏ
 function evaluate_lines(direction_arr: number[], player: number) {
-    let score: number = 0; // во сколько очков оценивается направление
+    let score: number = 0; // РІРѕ СЃРєРѕР»СЊРєРѕ РѕС‡РєРѕРІ РѕС†РµРЅРёРІР°РµС‚СЃСЏ РЅР°РїСЂР°РІР»РµРЅРёРµ
     for (let i = 0; (i + 4) < direction_arr.length; i++) {
-        let you: number = 0; // твои клетки на направлении
-        let enemy: number = 0; // чужие клетки на направлении
+        let you: number = 0; // С‚РІРѕРё РєР»РµС‚РєРё РЅР° РЅР°РїСЂР°РІР»РµРЅРёРё
+        let enemy: number = 0; // С‡СѓР¶РёРµ РєР»РµС‚РєРё РЅР° РЅР°РїСЂР°РІР»РµРЅРёРё
         for (let j = 0; j <= 4; j++) {
             if (direction_arr[i + j] === player) {
                 you++
@@ -234,20 +234,20 @@ function evaluate_lines(direction_arr: number[], player: number) {
         }
         score += evalff(get_seq(you, enemy));
         if ((score >= 800000)) {
-            return IS_WIN; // Победный ход
+            return IS_WIN; // РџРѕР±РµРґРЅС‹Р№ С…РѕРґ
         }
     }
     return score
 }
 
-//Оценка выгодности хода в точку x, y
+//РћС†РµРЅРєР° РІС‹РіРѕРґРЅРѕСЃС‚Рё С…РѕРґР° РІ С‚РѕС‡РєСѓ x, y
 function evaluate_move(board, x, y, player) {
-    let score: number = 0; // Сумма очков на всех направлениях
+    let score: number = 0; // РЎСѓРјРјР° РѕС‡РєРѕРІ РЅР° РІСЃРµС… РЅР°РїСЂР°РІР»РµРЅРёСЏС…
     const lines: number[][] = get_lines(board, x, y);
     let temp_score;
     for (let i = 0; i < 4; i++) {
         temp_score = evaluate_lines(lines[i], player);
-        if (temp_score === IS_WIN) { //если данный ход выигрывает игру, сразу же возвращаем его
+        if (temp_score === IS_WIN) { //РµСЃР»Рё РґР°РЅРЅС‹Р№ С…РѕРґ РІС‹РёРіСЂС‹РІР°РµС‚ РёРіСЂСѓ, СЃСЂР°Р·Сѓ Р¶Рµ РІРѕР·РІСЂР°С‰Р°РµРј РµРіРѕ
             return IS_WIN
         } else {
             score += temp_score
@@ -256,9 +256,9 @@ function evaluate_move(board, x, y, player) {
     return score;
 }
 
-//Оценка состояния данного построения клеток
+//РћС†РµРЅРєР° СЃРѕСЃС‚РѕСЏРЅРёСЏ РґР°РЅРЅРѕРіРѕ РїРѕСЃС‚СЂРѕРµРЅРёСЏ РєР»РµС‚РѕРє
 function evaluateblock(blocks: number, pieces: number) {
-    // Если нет вражеской клетки в построении
+    // Р•СЃР»Рё РЅРµС‚ РІСЂР°Р¶РµСЃРєРѕР№ РєР»РµС‚РєРё РІ РїРѕСЃС‚СЂРѕРµРЅРёРё
     if (blocks === 0) {
         switch (pieces) {
             case 1:
@@ -294,28 +294,28 @@ function evaluateblock(blocks: number, pieces: number) {
     }
 }
 
-// Оценка состояния доски с точки зрения игрока
+// РћС†РµРЅРєР° СЃРѕСЃС‚РѕСЏРЅРёСЏ РґРѕСЃРєРё СЃ С‚РѕС‡РєРё Р·СЂРµРЅРёСЏ РёРіСЂРѕРєР°
 function eval_board(board: number[][], pieceType, limits: number[]) {
     let score: number = 0;
     const min_x: number = limits[0];
     const min_y: number = limits[1];
     const max_x: number = limits[2];
     const max_y: number = limits[3];
-    // По горизонтали
+    // РџРѕ РіРѕСЂРёР·РѕРЅС‚Р°Р»Рё
     for (let row: number = min_x; row < max_x + 1; row++) {
         for (let column: number = min_y; column < max_y + 1; column++) {
             if (board[row][column] == pieceType) {
                 let block = 0;
                 let piece = 1;
-                // Слева от начала ряда
+                // РЎР»РµРІР° РѕС‚ РЅР°С‡Р°Р»Р° СЂСЏРґР°
                 if (column === 0 || board[row][column - 1] !== 0) {
                     block++;
                 }
-                // Длинна ряда подряд идущих клеток
+                // Р”Р»РёРЅРЅР° СЂСЏРґР° РїРѕРґСЂСЏРґ РёРґСѓС‰РёС… РєР»РµС‚РѕРє
                 for (column++; column < Columns && board[row][column] === pieceType; column++) {
                     piece++;
                 }
-                // Справа от конца ряда
+                // РЎРїСЂР°РІР° РѕС‚ РєРѕРЅС†Р° СЂСЏРґР°
                 if (column === Columns || board[row][column] !== 0) {
                     block++;
                 }
@@ -323,21 +323,21 @@ function eval_board(board: number[][], pieceType, limits: number[]) {
             }
         }
     }
-    // По вертикали
+    // РџРѕ РІРµСЂС‚РёРєР°Р»Рё
     for (let column = min_y; column < max_y + 1; column++) {
         for (let row = min_x; row < max_x + 1; row++) {
             if (board[row][column] == pieceType) {
                 let block = 0;
                 let piece = 1;
-                // Сверху от начала колонны
+                // РЎРІРµСЂС…Сѓ РѕС‚ РЅР°С‡Р°Р»Р° РєРѕР»РѕРЅРЅС‹
                 if (row === 0 || board[row - 1][column] !== 0) {
                     block++;
                 }
-                // Длинна колонны подряд идущих клеток
+                // Р”Р»РёРЅРЅР° РєРѕР»РѕРЅРЅС‹ РїРѕРґСЂСЏРґ РёРґСѓС‰РёС… РєР»РµС‚РѕРє
                 for (row++; row < Rows && board[row][column] === pieceType; row++) {
                     piece++;
                 }
-                // Снизу от конца колонны
+                // РЎРЅРёР·Сѓ РѕС‚ РєРѕРЅС†Р° РєРѕР»РѕРЅРЅС‹
                 if (row === Rows || board[row][column] !== 0) {
                     block++;
                 }
@@ -345,7 +345,7 @@ function eval_board(board: number[][], pieceType, limits: number[]) {
             }
         }
     }
-    // Антидиагональ
+    // РђРЅС‚РёРґРёР°РіРѕРЅР°Р»СЊ
     for (let n = min_x; n < (max_y - min_y + max_x); n++) {
         let r = n;
         let c = min_y;
@@ -354,18 +354,18 @@ function eval_board(board: number[][], pieceType, limits: number[]) {
                 if (board[r][c] === pieceType) {
                     let block = 0;
                     let piece = 1;
-                    // Слева внизу от начала
+                    // РЎР»РµРІР° РІРЅРёР·Сѓ РѕС‚ РЅР°С‡Р°Р»Р°
                     if (c === 0 || r === Rows - 1 || board[r + 1][c - 1] !== 0) {
                         block++;
                     }
-                    // Длинна диагонали подряд идущих клеток
+                    // Р”Р»РёРЅРЅР° РґРёР°РіРѕРЅР°Р»Рё РїРѕРґСЂСЏРґ РёРґСѓС‰РёС… РєР»РµС‚РѕРє
                     r--;
                     c++;
                     for (; r >= 0 && board[r][c] === pieceType; r--) {
                         piece++;
                         c++
                     }
-                    // Справа свеху от конца
+                    // РЎРїСЂР°РІР° СЃРІРµС…Сѓ РѕС‚ РєРѕРЅС†Р°
                     if (r < 0 || c === Columns || board[r][c] !== 0) {
                         block++;
                     }
@@ -376,7 +376,7 @@ function eval_board(board: number[][], pieceType, limits: number[]) {
             c += 1;
         }
     }
-    //Диагональ
+    //Р”РёР°РіРѕРЅР°Р»СЊ
     for (let n = min_x - (max_y - min_y); n <= max_x; n++) {
         let r = n;
         let c = min_y;
@@ -385,18 +385,18 @@ function eval_board(board: number[][], pieceType, limits: number[]) {
                 if (board[r][c] === pieceType) {
                     let block = 0;
                     let piece = 1;
-                    // Слева вверху от начала
+                    // РЎР»РµРІР° РІРІРµСЂС…Сѓ РѕС‚ РЅР°С‡Р°Р»Р°
                     if (c === 0 || r === 0 || board[r - 1][c - 1] !== 0) {
                         block++;
                     }
-                    // Длинна диагонали подряд идущих клеток
+                    // Р”Р»РёРЅРЅР° РґРёР°РіРѕРЅР°Р»Рё РїРѕРґСЂСЏРґ РёРґСѓС‰РёС… РєР»РµС‚РѕРє
                     r++;
                     c++;
                     for (; r < Rows && board[r][c] == pieceType; r++) {
                         piece++;
                         c++;
                     }
-                    // Справа снизу от конца
+                    // РЎРїСЂР°РІР° СЃРЅРёР·Сѓ РѕС‚ РєРѕРЅС†Р°
                     if (r === Rows || c === Columns || board[r][c] !== 0) {
                         block++;
                     }
@@ -411,7 +411,7 @@ function eval_board(board: number[][], pieceType, limits: number[]) {
     return score;
 }
 
-// Оценка состояния доски для каждого игрока и сохранения результата в хэше
+// РћС†РµРЅРєР° СЃРѕСЃС‚РѕСЏРЅРёСЏ РґРѕСЃРєРё РґР»СЏ РєР°Р¶РґРѕРіРѕ РёРіСЂРѕРєР° Рё СЃРѕС…СЂР°РЅРµРЅРёСЏ СЂРµР·СѓР»СЊС‚Р°С‚Р° РІ С…СЌС€Рµ
 function evaluate_state(board: number[][], player: number, hash: number, limits: number[]) {
     const noughts_score: number = eval_board(board, -1, limits);
     const crosses_score: number = eval_board(board, 1, limits);
@@ -425,7 +425,7 @@ function evaluate_state(board: number[][], player: number, hash: number, limits:
     return score;
 }
 
-//Обычный компаратор
+//РћР±С‹С‡РЅС‹Р№ РєРѕРјРїР°СЂР°С‚РѕСЂ
 function compare(a, b) {
     if (a.score < b.score)
         return 1;
@@ -434,7 +434,7 @@ function compare(a, b) {
     return 0;
 }
 
-// Генерация всех перспективных ходов, в виде их кординат и стоимости хода
+// Р“РµРЅРµСЂР°С†РёСЏ РІСЃРµС… РїРµСЂСЃРїРµРєС‚РёРІРЅС‹С… С…РѕРґРѕРІ, РІ РІРёРґРµ РёС… РєРѕСЂРґРёРЅР°С‚ Рё СЃС‚РѕРёРјРѕСЃС‚Рё С…РѕРґР°
 function BoardGenerator(limits, board, player) {
     const potential_moves_score = [];
     const min_x: number = limits[0];
@@ -461,9 +461,9 @@ function BoardGenerator(limits, board, player) {
     return potential_moves_score;
 }
 
-// Усоверешенствованный алгоритм альфа-бетта отсечения
-// При ПРАВИЛЬНОМ использовании вернет самый перспективный ход для ИИ
-// При рекурсивном запуске будет возвращать целое число, равное стоимости хода
+// РЈСЃРѕРІРµСЂРµС€РµРЅСЃС‚РІРѕРІР°РЅРЅС‹Р№ Р°Р»РіРѕСЂРёС‚Рј Р°Р»СЊС„Р°-Р±РµС‚С‚Р° РѕС‚СЃРµС‡РµРЅРёСЏ
+// РџСЂРё РџР РђР’РР›Р¬РќРћРњ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРё РІРµСЂРЅРµС‚ СЃР°РјС‹Р№ РїРµСЂСЃРїРµРєС‚РёРІРЅС‹Р№ С…РѕРґ РґР»СЏ РР
+// РџСЂРё СЂРµРєСѓСЂСЃРёРІРЅРѕРј Р·Р°РїСѓСЃРєРµ Р±СѓРґРµС‚ РІРѕР·РІСЂР°С‰Р°С‚СЊ С†РµР»РѕРµ С‡РёСЃР»Рѕ, СЂР°РІРЅРѕРµ СЃС‚РѕРёРјРѕСЃС‚Рё С…РѕРґР°
 function negascout(new_board: number[][], player: number, depth: number, alpha: number, beta: number, hash: number, limits: number[], last_x: number, last_y: number) {
     const alpha_original: number = alpha;
     const CacheNode = Cache.get(hash)
@@ -540,7 +540,7 @@ function negascout(new_board: number[][], player: number, depth: number, alpha: 
     }
 }
 
-// Проверка, можно ли сделать ход
+// РџСЂРѕРІРµСЂРєР°, РјРѕР¶РЅРѕ Р»Рё СЃРґРµР»Р°С‚СЊ С…РѕРґ
 function check_move(board: number[][], x: number, y: number) {
     if (x >= 0 && x < Rows && y >= 0 && y < Columns)
         if (board[x][y] === 0) {
@@ -549,18 +549,18 @@ function check_move(board: number[][], x: number, y: number) {
     return false;
 }
 
-// Операция хода, принимает на вход доску, кординаты хода и то чем играет игрок
+// РћРїРµСЂР°С†РёСЏ С…РѕРґР°, РїСЂРёРЅРёРјР°РµС‚ РЅР° РІС…РѕРґ РґРѕСЃРєСѓ, РєРѕСЂРґРёРЅР°С‚С‹ С…РѕРґР° Рё С‚Рѕ С‡РµРј РёРіСЂР°РµС‚ РёРіСЂРѕРє
 function make_move(board: number[][], x: number, y: number, player: number) {
-    // Если ход невозможен, возвращает доску без изменений
+    // Р•СЃР»Рё С…РѕРґ РЅРµРІРѕР·РјРѕР¶РµРЅ, РІРѕР·РІСЂР°С‰Р°РµС‚ РґРѕСЃРєСѓ Р±РµР· РёР·РјРµРЅРµРЅРёР№
     if (!check_move(board, x, y)) {
         return { board: board, status_winner: 0, status_move: false }
     }
-    // Игрок победил своим ходом
+    // РРіСЂРѕРє РїРѕР±РµРґРёР» СЃРІРѕРёРј С…РѕРґРѕРј
     board[x][y] = player;
     if (check_win(board, x, y)) {
         return { board: board, status_winner: player, status_move: true };
     }
-    // Ход ИИ
+    // РҐРѕРґ РР
     let bestmove = negascout(board, -player, MaximumDepth, -Infinity, Infinity, hash(board), create_limits(board), x, y);
 
     board[bestmove.i][bestmove.j] = -player;
