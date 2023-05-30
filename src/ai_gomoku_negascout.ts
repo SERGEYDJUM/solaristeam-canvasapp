@@ -1,10 +1,10 @@
 var crypto = require('crypto');
 const Rows: number = 15, Columns: number = 15;  // Размер поля
-let Table_hash: number[][][] = []; // Таблица для хранения хэша где [номер строки][номер столбца][-1 если для игрока, 1 если для ИИ]
-Table_init(); // Инициализация Table_hash
+let TableHash: number[][][] = []; // Таблица для хранения хэша где [номер строки][номер столбца][-1 если для игрока, 1 если для ИИ]
+TableInit(); // Инициализация Table_hash
 const IS_WIN: boolean = false; // Флаг победного хода
 const Cache = new Map(); // Кэш
-const State_Cache = new Map(); // Состояние кэша
+const StateCache = new Map(); // Состояние кэша
 const MaximumDepth = 4; // Максимальная глубина на которую будет вестись поиск
 
 /* Указаны стоимости блоков ячеек. Они бывают открытые и полуоткрытые.
@@ -22,7 +22,7 @@ const CloseFour: number = 1000;
 const Five: number = 100000;
 
 //Проверяем, вляется ли линия победной (5 подряд идущих значений)
-function check_directions(line: number[]) {
+function checkLines(line: number[]) {
     for (let i: number = 0; i < line.length - 4; i++) {
         if (line[i] !== 0) {
             if (line[i] === line[i + 1] && line[i] === line[i + 2] && line[i] === line[i + 3] && line[i] === line[i + 4]) {
@@ -34,7 +34,7 @@ function check_directions(line: number[]) {
 }
 
 //Возвращаем массив всех возможных линий из точки x, y
-function get_lines(board: number[][], x: number, y: number) {
+function getLines(board: number[][], x: number, y: number) {
     const lines: number[][] = [[], [], [], []];
     for (let i: number = -4; i < 5; i++) {
         if (x + i >= 0 && x + i <= Rows - 1) {
@@ -54,10 +54,10 @@ function get_lines(board: number[][], x: number, y: number) {
 }
 
 //Проверка победы после этого хода, из точки x, y
-function check_win(board: number[][], x: number, y: number) {
-    const lines: number[][] = get_lines(board, x, y)
+function checkWin(board: number[][], x: number, y: number) {
+    const lines: number[][] = getLines(board, x, y)
     for (let i = 0; i < 4; i++) {
-        if (check_directions(lines[i])) {
+        if (checkLines(lines[i])) {
             return true
         }
     }
@@ -66,7 +66,7 @@ function check_win(board: number[][], x: number, y: number) {
 
 /*Создание границ в которых мы будем осуществлять поиск
  Это прямоугольник внутри которого находятся все закрашенные клетки*/
-function create_limits(board: number[][]) {
+function limitsCreate(board: number[][]) {
     let min_x: number = Rows;
     let min_y: number = Columns;
     let max_x: number = -1;
@@ -91,7 +91,7 @@ function create_limits(board: number[][]) {
 }
 
 // Изменение границ в которых мы будем осуществлять поиск
-function change_limits(limits: number[], i:number, j:number) {
+function limitsChange(limits: number[], i:number, j:number) {
     let min_x: number = limits[0];
     let min_y: number = limits[1];
     let max_x: number = limits[2];
@@ -117,13 +117,13 @@ function random32() {
 }
 
 //Хэширование Зобриста
-function Table_init() {
+function TableInit() {
     for (let i: number = 0; i < Rows; i++) {
-        Table_hash[i] = [];
+        TableHash[i] = [];
         for (let j: number = 0; j < Columns; j++) {
-            Table_hash[i][j] = []
-            Table_hash[i][j][0] = random32(); // 32-битное случайное число
-            Table_hash[i][j][1] = random32();
+            TableHash[i][j] = []
+            TableHash[i][j][0] = random32(); // 32-битное случайное число
+            TableHash[i][j][1] = random32();
         }
     }
 }
@@ -141,7 +141,7 @@ function hash(board: number[][]) {
                 } else {
                     p = 1 //игрок 1 - свои
                 }
-                h = h ^ Table_hash[i][j][p];
+                h = h ^ TableHash[i][j][p];
             }
         }
     }
@@ -149,18 +149,18 @@ function hash(board: number[][]) {
 }
 
 //Обновление хэша
-function update_hash(hash: number, player, x: number, y: number) { //Обновляем хэш
+function hashUpdate(hash: number, player, x: number, y: number) { //Обновляем хэш
     if (player === -1) {
         player = 0
     } else {
         player = 1
     }
-    hash = hash ^ Table_hash[x][y][player];
+    hash = hash ^ TableHash[x][y][player];
     return hash
 }
 
 // Проверяет, является ли клетка удаленной, если в радиусе 2 клеток у клетки нет соседей, то она не перспективная
-function is_remote_cell(board: number[][], x: number, y: number) {
+function isRemoteCell(board: number[][], x: number, y: number) {
     for (let i: number = x - 2; i <= y + 2; i++) {
         if (i < 0 || i >= Rows)
             continue;
@@ -175,11 +175,11 @@ function is_remote_cell(board: number[][], x: number, y: number) {
 }
 
 //В зависимости от параметра seq направлению дается приоритет
-function evalff(seq: number) {
+function lineScore(seq: number) {
     switch (seq) {
         case 0:
             return 7;
-        // Важно заполнить свое перспектиное напрвление
+        // Важно заполнить свою перспектиную линию
         case 1:
             return 35;
         case 2:
@@ -188,7 +188,7 @@ function evalff(seq: number) {
             return 15000;
         case 4:
             return 800000;
-        // Закрыть перспективное направление для соперника, чуть менее важно
+        // Закрыть перспективную линию для соперника, чуть менее важно
         case -1:
             return 15;
         case -2:
@@ -197,14 +197,14 @@ function evalff(seq: number) {
             return 1800;
         case -4:
             return 100000;
-        // Самое бесперспективное, направление в котором есть и свои и чужие
+        // Самое бесперспективная, линия в которой есть и свои и чужие
         case 17:
             return 0; 
     }
 }
 
 //Расчет коэфицента по которому высчитывается перспективность данной линии в зависимости от того, сколько своих и вражеских клеток на линии
-function get_seq(y: number, e: number) {
+function coeffLineScore(y: number, e: number) {
     if (y + e === 0) {
         return 0;
     }
@@ -220,19 +220,19 @@ function get_seq(y: number, e: number) {
 }
 
 //Оценка выгодности направления
-function evaluate_lines(direction_arr: number[], player: number) {
+function evaluateLines(line: number[], player: number) {
     let score: number = 0; // во сколько очков оценивается направление
-    for (let i = 0; (i + 4) < direction_arr.length; i++) {
+    for (let i = 0; (i + 4) < line.length; i++) {
         let you: number = 0; // твои клетки на направлении
         let enemy: number = 0; // чужие клетки на направлении
         for (let j = 0; j <= 4; j++) {
-            if (direction_arr[i + j] === player) {
+            if (line[i + j] === player) {
                 you++
-            } else if (direction_arr[i + j] === -player) {
+            } else if (line[i + j] === -player) {
                 enemy++
             }
         }
-        score += evalff(get_seq(you, enemy));
+        score += lineScore(coeffLineScore(you, enemy));
         if ((score >= 800000)) {
             return IS_WIN; // Победный ход
         }
@@ -241,23 +241,23 @@ function evaluate_lines(direction_arr: number[], player: number) {
 }
 
 //Оценка выгодности хода в точку x, y
-function evaluate_move(board, x, y, player) {
+function evaluateMove(board, x, y, player) {
     let score: number = 0; // Сумма очков на всех направлениях
-    const lines: number[][] = get_lines(board, x, y);
-    let temp_score;
+    const lines: number[][] = getLines(board, x, y);
+    let lineScore;
     for (let i = 0; i < 4; i++) {
-        temp_score = evaluate_lines(lines[i], player);
-        if (temp_score === IS_WIN) { //если данный ход выигрывает игру, сразу же возвращаем его
+        lineScore = evaluateLines(lines[i], player);
+        if (lineScore === IS_WIN) { //если данный ход выигрывает игру, сразу же возвращаем его
             return IS_WIN
         } else {
-            score += temp_score
+            score += lineScore
         }
     }
     return score;
 }
 
 //Оценка состояния данного построения клеток
-function evaluateblock(blocks: number, pieces: number) {
+function evaluateConstruction(blocks: number, pieces: number) {
     // Если нет вражеской клетки в построении
     if (blocks === 0) {
         switch (pieces) {
@@ -295,7 +295,7 @@ function evaluateblock(blocks: number, pieces: number) {
 }
 
 // Оценка состояния доски с точки зрения игрока
-function eval_board(board: number[][], pieceType, limits: number[]) {
+function evaluateBoard(board: number[][], pieceType, limits: number[]) {
     let score: number = 0;
     const min_x: number = limits[0];
     const min_y: number = limits[1];
@@ -319,7 +319,7 @@ function eval_board(board: number[][], pieceType, limits: number[]) {
                 if (column === Columns || board[row][column] !== 0) {
                     block++;
                 }
-                score += evaluateblock(block, piece);
+                score += evaluateConstruction(block, piece);
             }
         }
     }
@@ -341,7 +341,7 @@ function eval_board(board: number[][], pieceType, limits: number[]) {
                 if (row === Rows || board[row][column] !== 0) {
                     block++;
                 }
-                score += evaluateblock(block, piece);
+                score += evaluateConstruction(block, piece);
             }
         }
     }
@@ -369,7 +369,7 @@ function eval_board(board: number[][], pieceType, limits: number[]) {
                     if (r < 0 || c === Columns || board[r][c] !== 0) {
                         block++;
                     }
-                    score += evaluateblock(block, piece);
+                    score += evaluateConstruction(block, piece);
                 }
             }
             r -= 1;
@@ -400,7 +400,7 @@ function eval_board(board: number[][], pieceType, limits: number[]) {
                     if (r === Rows || c === Columns || board[r][c] !== 0) {
                         block++;
                     }
-                    score += evaluateblock(block, piece);
+                    score += evaluateConstruction(block, piece);
                 }
             }
             r += 1;
@@ -412,16 +412,16 @@ function eval_board(board: number[][], pieceType, limits: number[]) {
 }
 
 // Оценка состояния доски для каждого игрока и сохранения результата в хэше
-function evaluate_state(board: number[][], player: number, hash: number, limits: number[]) {
-    const noughts_score: number = eval_board(board, -1, limits);
-    const crosses_score: number = eval_board(board, 1, limits);
+function evaluateState(board: number[][], player: number, hash: number, limits: number[]) {
+    const noughts_score: number = evaluateBoard(board, -1, limits);
+    const crosses_score: number = evaluateBoard(board, 1, limits);
     let score = 0;
     if (player == -1) {
         score = (noughts_score - crosses_score);
     } else {
         score = (crosses_score - noughts_score);
     }
-    State_Cache.set(hash, score);
+    StateCache.set(hash, score);
     return score;
 }
 
@@ -443,11 +443,11 @@ function BoardGenerator(limits, board, player) {
     const max_y: number = limits[3];;
     for (let i: number = min_x - 2; i <= max_x + 2; i++) {
         for (let j: number = min_y - 2; j <= max_y + 2; j++) {
-            if (board[i][j] === 0 && !is_remote_cell(board, i, j)) {
+            if (board[i][j] === 0 && !isRemoteCell(board, i, j)) {
                 var move = {i: 0, j: 0, score: 0};
                 move.i = i;
                 move.j = j;
-                let potential_score: number | boolean = evaluate_move(board, i, j, player);
+                let potential_score: number | boolean = evaluateMove(board, i, j, player);
                 if (potential_score === IS_WIN) {
                     move.score = 1;
                     return [move]
@@ -465,7 +465,7 @@ function BoardGenerator(limits, board, player) {
 // При ПРАВИЛЬНОМ использовании вернет самый перспективный ход для ИИ
 // При рекурсивном запуске будет возвращать целое число, равное стоимости хода
 function negascout(new_board: number[][], player: number, depth: number, alpha: number, beta: number, hash: number, limits: number[], last_x: number, last_y: number) {
-    const alpha_original: number = alpha;
+    const alphaOriginal: number = alpha;
     const CacheNode = Cache.get(hash)
     if ((CacheNode !== undefined) && (CacheNode.depth >= depth)) {
         const score: number = CacheNode.score;
@@ -482,15 +482,15 @@ function negascout(new_board: number[][], player: number, depth: number, alpha: 
         }
     }
 
-    if (check_win(new_board, last_x, last_y)) {
+    if (checkWin(new_board, last_x, last_y)) {
         return -2000000 + (MaximumDepth - depth)
     }
     if (depth === 0) {
-        const StateCacheNode = State_Cache.get(hash);
+        const StateCacheNode = StateCache.get(hash);
         if (StateCacheNode !== undefined) {
             return StateCacheNode
         }
-        return evaluate_state(new_board, player, hash, limits)
+        return evaluateState(new_board, player, hash, limits)
     }
 
     const potential_moves = BoardGenerator(limits, new_board, player);
@@ -504,9 +504,9 @@ function negascout(new_board: number[][], player: number, depth: number, alpha: 
     for (let y: number = 0; y < potential_moves.length; y++) {
         let i = potential_moves[y].i;
         let j = potential_moves[y].j;
-        const newHash = update_hash(hash, player, i, j)
+        const newHash = hashUpdate(hash, player, i, j)
         new_board[i][j] = player;
-        const restrictions_temp = change_limits(limits, i, j)
+        const restrictions_temp = limitsChange(limits, i, j)
         let score = -negascout(new_board, -player, depth - 1, -b, -alpha, newHash, restrictions_temp, i, j)
         if (score > alpha && score < beta && y > 0) {
             score = -negascout(new_board, -player, depth - 1, -beta, -score, newHash, restrictions_temp, i, j)
@@ -527,7 +527,7 @@ function negascout(new_board: number[][], player: number, depth: number, alpha: 
         b = alpha + 1;
     }
     const obj = { score: bestscore, depth: depth, flag: 0 };
-    if (bestscore <= alpha_original) {
+    if (bestscore <= alphaOriginal) {
         obj.flag = 1
     } else if (bestscore >= b) {
         obj.flag = -1
@@ -541,7 +541,7 @@ function negascout(new_board: number[][], player: number, depth: number, alpha: 
 }
 
 // Проверка, можно ли сделать ход
-function check_move(board: number[][], x: number, y: number) {
+function checkMove(board: number[][], x: number, y: number) {
     if (x >= 0 && x < Rows && y >= 0 && y < Columns)
         if (board[x][y] === 0) {
             return true;
@@ -550,26 +550,26 @@ function check_move(board: number[][], x: number, y: number) {
 }
 
 // Операция хода, принимает на вход доску, кординаты хода и то чем играет игрок
-function make_move(board: number[][], x: number, y: number, player: number) {
+function makeMove(board: number[][], x: number, y: number, player: number) {
     // Если ход невозможен, возвращает доску без изменений
-    if (!check_move(board, x, y)) {
-        return { board: board, status_winner: 0, status_move: false }
+    if (!checkMove(board, x, y)) {
+        return { board: board, statusWinner: 0, statusMove: false }
     }
     // Игрок победил своим ходом
     board[x][y] = player;
-    if (check_win(board, x, y)) {
-        return { board: board, status_winner: player, status_move: true };
+    if (checkWin(board, x, y)) {
+        return { board: board, statusWinner: player, statusMove: true };
     }
     // Ход ИИ
-    let bestmove = negascout(board, -player, MaximumDepth, -Infinity, Infinity, hash(board), create_limits(board), x, y);
+    let bestmove = negascout(board, -player, MaximumDepth, -Infinity, Infinity, hash(board), limitsCreate(board), x, y);
 
     board[bestmove.i][bestmove.j] = -player;
 
     Cache.clear();
-    State_Cache.clear();
-    if (check_win(board, bestmove.i, bestmove.j)) {
-        return { board: board, status_winner: -player, status_move: true };
+    StateCache.clear();
+    if (checkWin(board, bestmove.i, bestmove.j)) {
+        return { board: board, statusWinner: -player, statusMove: true };
     } 
 
-    return { board: board, status_winner: 0, status_move: true };
+    return { board: board, statusWinner: 0, statusMove: true };
 }
