@@ -3,12 +3,40 @@ import styled from "styled-components"
 import {createAssistant, createSmartappDebugger} from "@salutejs/client"
 import {AssistantClient} from "@salutejs/client"
 import {Board} from "./components"
+import {Button, TextL} from "@salutejs/plasma-ui"
+import _ from "lodash"
+
+const Layout = styled.div`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  align-items: center;
+`
 
 const Container = styled.div`
   display: flex;
-  width: 100%;
+  align-items: center;
+  flex-direction: column;
+  margin-top: 24px;
+`
+
+const ModalContent = styled.section`
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 12px;
+`
+
+const MenuContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  background-color: rgba(255,255,255,0.06);
+  border-radius: 16px;
+  width: 100%;
+  padding: 24px;
 `
 
 const initializeAssistant = (getState: () => object): AssistantClient => {
@@ -25,6 +53,7 @@ const initializeAssistant = (getState: () => object): AssistantClient => {
 type State = {
   board: Array<Array<number>>,
   playerTurn: boolean,
+  playerSide: number,
 }
 
 class App extends React.Component<never, State> {
@@ -40,6 +69,7 @@ class App extends React.Component<never, State> {
         .fill(null)
         .map(() => Array(15).fill(0)),
       playerTurn: true,
+      playerSide: _.sample([-1, 1]) as number,
     }
 
     this.handleClick.bind(this)
@@ -50,7 +80,6 @@ class App extends React.Component<never, State> {
   }
 
   handleClick(i, j) {
-    console.log(i, j);
     const board = this.state.board.slice();
     board[i][j] = this.state.playerTurn ? 1 : -1;
     this.setState({
@@ -61,15 +90,22 @@ class App extends React.Component<never, State> {
   }
 
   render() {
-
     return (
       <>
-        <Container>
-          <Board
-            board={this.state.board}
-            handleClick={(i, j) => this.handleClick(i, j)}
-          />
-        </Container>
+        <Layout>
+          <Container>
+            <MenuContainer>
+              <TextL>
+                {this.state.playerSide === 1 ? "Вы играете за крестики" : "Вы играете за нолики"}
+              </TextL>
+              <Button text="Новая игра" size="s" view="overlay" />
+            </MenuContainer>
+            <Board
+              board={this.state.board}
+              handleClick={(i, j) => this.handleClick(i, j)}
+            />
+          </Container>
+        </Layout>
       </>
     )
   }
