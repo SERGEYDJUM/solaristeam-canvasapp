@@ -1,25 +1,43 @@
 import React from "react"
-import styled, { createGlobalStyle } from "styled-components"
-import { text, background, gradient } from "@salutejs/plasma-tokens"
-import { createAssistant, createSmartappDebugger } from "@salutejs/client"
-import { AssistantClient } from "@salutejs/client"
-import { Board } from "./components"
+import styled from "styled-components"
+import {createAssistant, createSmartappDebugger} from "@salutejs/client"
+import {AssistantClient} from "@salutejs/client"
+import {Board} from "./components"
+import {Button, TextL} from "@salutejs/plasma-ui"
+import _ from "lodash"
 import makeMove from "./ai_gomoku_negascout.tsx"
 
-const MainStyles = createGlobalStyle`
-  body {
-    color: ${text};
-    background-color: ${background};
-    background-image: ${gradient};
-    margin: 0;
-  }
+const Layout = styled.div`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  align-items: center;
 `
 
 const Container = styled.div`
   display: flex;
-  width: 100%;
+  align-items: center;
+  flex-direction: column;
+  margin-top: 24px;
+`
+
+const ModalContent = styled.section`
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 12px;
+`
+
+const MenuContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  background-color: rgba(255,255,255,0.06);
+  border-radius: 16px;
+  width: 100%;
+  padding: 24px;
 `
 
 interface Action {
@@ -43,6 +61,8 @@ type State = {
   winner: number,
   last_move_valid: boolean,
   can_move: boolean,
+  playerTurn: boolean,
+  playerSide: number,
 }
 
 class App extends React.Component<never, State> {
@@ -58,6 +78,8 @@ class App extends React.Component<never, State> {
       last_move_valid: true,
       winner: 0,
       can_move: true,
+      playerTurn: true,
+      playerSide: _.sample([-1, 1]) as number,
     }
 
     this.assistant = initializeAssistant(() => this.getStateForAssistant())
@@ -157,16 +179,22 @@ class App extends React.Component<never, State> {
   }
 
   render() {
-
     return (
       <>
-        <Container>
-          <Board
-            board={this.state.board}
-            handleClick={(i, j) => this.handleClick(i, j)}
-          />
-        </Container>
-        <MainStyles />
+        <Layout>
+          <Container>
+            <MenuContainer>
+              <TextL>
+                {this.state.playerSide === 1 ? "Вы играете за крестики" : "Вы играете за нолики"}
+              </TextL>
+              <Button text="Новая игра" size="s" view="overlay" />
+            </MenuContainer>
+            <Board
+              board={this.state.board}
+              handleClick={(i, j) => this.handleClick(i, j)}
+            />
+          </Container>
+        </Layout>
       </>
     )
   }
