@@ -4,6 +4,7 @@ import { text, background, gradient } from "@salutejs/plasma-tokens"
 import { createAssistant, createSmartappDebugger } from "@salutejs/client"
 import { AssistantClient } from "@salutejs/client"
 import { Board } from "./components"
+import makeMove from "./ai_gomoku_negascout.tsx"
 
 const MainStyles = createGlobalStyle`
   body {
@@ -39,7 +40,8 @@ const initializeAssistant = (getState: () => object): AssistantClient => {
 
 type State = {
   board: Array<Array<number>>,
-  playerTurn: boolean,
+  winner: number,
+  last_move_valid: boolean,
 }
 
 class App extends React.Component<never, State> {
@@ -52,7 +54,8 @@ class App extends React.Component<never, State> {
       board: Array(15)
         .fill(null)
         .map(() => Array(15).fill(0)),
-      playerTurn: true,
+      last_move_valid: true,
+      winner: 0,
     }
 
     this.assistant = initializeAssistant(() => this.getStateForAssistant())
@@ -71,10 +74,20 @@ class App extends React.Component<never, State> {
     // последний ход игрока был невалидным == 1
     // победил игрок == 2
     // победил ИИ == 3
+    let game_status = 0;
+    if (this.state.last_move_valid) {
+      if (this.state.winner == 1) {
+        game_status = 2;
+      } else if (this.state.winner == -1) {
+        game_status = 3
+      }
+    } else {
+      game_status = 1;
+    }
+
     const state = {
       game_state: {
-        players_turn: this.state.playerTurn,
-        game_status: 0,
+        game_status: game_status,
       }
     }
     return state
@@ -85,7 +98,7 @@ class App extends React.Component<never, State> {
     if (action) {
       switch (action.type) {
         case 'player_move':
-          return this.handleClick(action.move.x - 1, action.move.y - 1, true)
+          return this.handleClick(action.move.x, action.move.y)
         case 'reset_game':
           return this.resetGame()
         default:
@@ -95,25 +108,46 @@ class App extends React.Component<never, State> {
   }
 
   resetGame() {
-    this.state = {
+    this.setState({
       board: Array(15)
         .fill(null)
         .map(() => Array(15).fill(0)),
-      playerTurn: true,
+      last_move_valid: true,
+      winner: 0
+    });
+  }
+
+  handleClick(i: number, j: number) {
+    if (this.state.winner == 0) {
+      console.log("Attempted click: ", i, j);
+      const movedata = makeMove(this.state.board.slice(), i, j, 1)
+      this.setState({
+        ...this.state,
+        board: movedata.new_board || this.state.board,
+        last_move_valid: movedata.move_valid,
+        winner: movedata.winner,
+      });
+      
+      this._send_action("registered_move", null)
     }
   }
 
-  handleClick(i: number, j: number, actor_is_player: boolean) {
-    console.log("Attempted click: ", i, j);
-    if (actor_is_player == this.state.playerTurn) {
-      const board = this.state.board.slice();
-      board[i][j] = this.state.playerTurn ? 1 : -1;
-      this.setState({
-        ...this.state,
-        playerTurn: !this.state.playerTurn,
-        board: board
+  _send_action(action_id: string, value: any) {
+    const data = {
+      action: {
+        action_id: action_id,
+        parameters: {
+          value: value
+        }
+      }
+    };
+
+    const unsubscribe = this.assistant.sendData(
+      data, 
+      (data: any) => {
+        const {type, payload} = data;
+        console.log("sendData onData:", type, payload);
       });
-    }
   }
 
   render() {
@@ -123,7 +157,7 @@ class App extends React.Component<never, State> {
         <Container>
           <Board
             board={this.state.board}
-            handleClick={(i, j) => this.handleClick(i, j, true)}
+            handleClick={(i, j) => this.handleClick(i, j)}
           />
         </Container>
         <MainStyles />
