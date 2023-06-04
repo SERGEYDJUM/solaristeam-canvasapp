@@ -7,6 +7,7 @@ import {Button, TextL} from "@salutejs/plasma-ui"
 import _ from "lodash"
 import makeMove from "./ai_gomoku_negascout.tsx"
 
+
 const Layout = styled.div`
   display: flex;
   flex-direction: column;
@@ -61,7 +62,6 @@ type State = {
   winner: number,
   last_move_valid: boolean,
   can_move: boolean,
-  playerTurn: boolean,
   playerSide: number,
 }
 
@@ -78,7 +78,6 @@ class App extends React.Component<never, State> {
       last_move_valid: true,
       winner: 0,
       can_move: true,
-      playerTurn: true,
       playerSide: _.sample([-1, 1]) as number,
     }
 
@@ -102,7 +101,7 @@ class App extends React.Component<never, State> {
     if (this.state.last_move_valid) {
       if (this.state.winner == this.state.playerSide) {
         game_status = 2;
-      } else if (this.state.winner == -1) {
+      } else if (this.state.winner == -this.state.playerSide) {
         game_status = 3
       }
     } else {
@@ -154,7 +153,7 @@ class App extends React.Component<never, State> {
         board: movedata.new_board || this.state.board,
         last_move_valid: movedata.move_valid,
         winner: movedata.winner,
-        can_move: true,
+        can_move: (movedata.winner == 0),
       });
       this._send_action("registered_move", null)
     }
