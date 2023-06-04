@@ -100,7 +100,7 @@ class App extends React.Component<never, State> {
     // победил ИИ == 3
     let game_status = 0;
     if (this.state.last_move_valid) {
-      if (this.state.winner == 1) {
+      if (this.state.winner == this.state.playerSide) {
         game_status = 2;
       } else if (this.state.winner == -1) {
         game_status = 3
@@ -139,6 +139,7 @@ class App extends React.Component<never, State> {
       last_move_valid: true,
       winner: 0,
       can_move: true,
+      playerSide: -this.state.playerSide,
     });
   }
 
@@ -147,7 +148,7 @@ class App extends React.Component<never, State> {
     if (this.state.can_move) {
       this.state.can_move = false;
       console.log("Click processing: ", i, j);
-      const movedata = makeMove(this.state.board.slice(), i, j, 1)
+      const movedata = makeMove(this.state.board.slice(), i, j, this.state.playerSide)
       this.setState({
         ...this.state,
         board: movedata.new_board || this.state.board,
@@ -187,7 +188,7 @@ class App extends React.Component<never, State> {
               <TextL>
                 {this.state.playerSide === 1 ? "Вы играете за крестики" : "Вы играете за нолики"}
               </TextL>
-              <Button text="Новая игра" size="s" view="overlay" />
+              <Button text="Новая игра" size="s" view="overlay" onClick={() =>this._send_action("reset_game", null)}/>
             </MenuContainer>
             <Board
               board={this.state.board}
