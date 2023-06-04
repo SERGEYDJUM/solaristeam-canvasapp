@@ -42,6 +42,7 @@ type State = {
   board: Array<Array<number>>,
   winner: number,
   last_move_valid: boolean,
+  can_move: boolean,
 }
 
 class App extends React.Component<never, State> {
@@ -56,6 +57,7 @@ class App extends React.Component<never, State> {
         .map(() => Array(15).fill(0)),
       last_move_valid: true,
       winner: 0,
+      can_move: true,
     }
 
     this.assistant = initializeAssistant(() => this.getStateForAssistant())
@@ -98,7 +100,7 @@ class App extends React.Component<never, State> {
     if (action) {
       switch (action.type) {
         case 'player_move':
-          return this.handleClick(action.move.x, action.move.y)
+          return this.handleClick(action.move.x - 1, action.move.y - 1)
         case 'reset_game':
           return this.resetGame()
         default:
@@ -113,21 +115,24 @@ class App extends React.Component<never, State> {
         .fill(null)
         .map(() => Array(15).fill(0)),
       last_move_valid: true,
-      winner: 0
+      winner: 0,
+      can_move: true,
     });
   }
 
   handleClick(i: number, j: number) {
-    if (this.state.winner == 0) {
-      console.log("Attempted click: ", i, j);
+    console.log("Attempted click: ", i, j);
+    if (this.state.can_move) {
+      this.state.can_move = false;
+      console.log("Click processing: ", i, j);
       const movedata = makeMove(this.state.board.slice(), i, j, 1)
       this.setState({
         ...this.state,
         board: movedata.new_board || this.state.board,
         last_move_valid: movedata.move_valid,
         winner: movedata.winner,
+        can_move: true,
       });
-      
       this._send_action("registered_move", null)
     }
   }
@@ -147,6 +152,7 @@ class App extends React.Component<never, State> {
       (data: any) => {
         const {type, payload} = data;
         console.log("sendData onData:", type, payload);
+        unsubscribe();
       });
   }
 
