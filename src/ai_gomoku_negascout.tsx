@@ -90,7 +90,7 @@ function limitsCreate(board: number[][]) {
 }
 
 // Изменение границ в которых мы будем осуществлять поиск
-function limitsChange(limits: number[], i:number, j:number) {
+function limitsChange(limits: number[], i: number, j: number) {
     let min_x: number = limits[0];
     let min_y: number = limits[1];
     let max_x: number = limits[2];
@@ -198,7 +198,7 @@ function lineScore(seq: number) {
             return 100000;
         // Самое бесперспективная, линия в которой есть и свои и чужие
         case 17:
-            return 0; 
+            return 0;
     }
 }
 
@@ -443,7 +443,7 @@ function BoardGenerator(limits, board, player) {
     for (let i: number = min_x - 2; i <= max_x + 2; i++) {
         for (let j: number = min_y - 2; j <= max_y + 2; j++) {
             if (board[i][j] === 0 && !isRemoteCell(board, i, j)) {
-                var move = {i: 0, j: 0, score: 0};
+                var move = { i: 0, j: 0, score: 0 };
                 move.i = i;
                 move.j = j;
                 let potential_score: number | boolean = evaluateMove(board, i, j, player);
@@ -551,15 +551,15 @@ function checkMove(board: number[][], x: number, y: number) {
 interface MoveResult {
     new_board: number[][] | null,
     winner: number,
-    move_valid: boolean 
+    move_valid: boolean
 }
 
 // Операция хода, принимает на вход доску, кординаты хода и то чем играет игрок
 function makeMove(board: number[][], x: number, y: number, player: number): MoveResult {
-    
+
     // Если ход невозможен, возвращает доску без изменений
     if (!checkMove(board, x, y)) {
-        return {new_board: null, winner: 0, move_valid: false};
+        return { new_board: null, winner: 0, move_valid: false };
     }
 
     // Игрок победил своим ходом
@@ -577,7 +577,7 @@ function makeMove(board: number[][], x: number, y: number, player: number): Move
     StateCache.clear();
     if (checkWin(board, bestmove.i, bestmove.j)) {
         return { new_board: board, winner: -player, move_valid: true };
-    } 
+    }
 
     return { new_board: board, winner: 0, move_valid: true };
 }
