@@ -1,9 +1,9 @@
 import React from "react"
 import styled from "styled-components"
-import {createAssistant, createSmartappDebugger} from "@salutejs/client"
-import {AssistantClient} from "@salutejs/client"
-import {Board} from "./components"
-import {Button, TextL} from "@salutejs/plasma-ui"
+import { createAssistant, createSmartappDebugger } from "@salutejs/client"
+import { AssistantClient } from "@salutejs/client"
+import { Board } from "./components"
+import { Button, TextL } from "@salutejs/plasma-ui"
 import _ from "lodash"
 import makeMove from "./ai_gomoku_negascout.tsx"
 
@@ -170,9 +170,9 @@ class App extends React.Component<never, State> {
     };
 
     const unsubscribe = this.assistant.sendData(
-      data, 
+      data,
       (data: any) => {
-        const {type, payload} = data;
+        const { type, payload } = data;
         console.log("sendData onData:", type, payload);
         unsubscribe();
       });
@@ -187,7 +187,7 @@ class App extends React.Component<never, State> {
               <TextL>
                 {this.state.playerSide === 1 ? "Вы играете за крестики" : "Вы играете за нолики"}
               </TextL>
-              <Button text="Новая игра" size="s" view="overlay" onClick={() =>this._send_action("reset_game", null)}/>
+              <Button text="Новая игра" size="s" view="overlay" onClick={() => this._send_action("reset_game", null)} />
             </MenuContainer>
             <Board
               board={this.state.board}
