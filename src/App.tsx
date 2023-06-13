@@ -157,11 +157,13 @@ class App extends React.Component<never, State> {
       console.log("AI Move Calculated: ", movedata.ai_move)
       this.state.board = movedata.new_board || this.state.board;
       this.state.last_ai_move = movedata.ai_move
+      this.state.can_move = (movedata.winner == 0)
       this.state.winner = movedata.winner
       this.state.last_move_valid = movedata.move_valid
+
+      this.setState({...this.state});
       console.log("AI Moved: ", this.state.last_ai_move)
       this._send_action("registered_move", null)
-      this.state.can_move = (movedata.winner == 0)
     }
   }
 
