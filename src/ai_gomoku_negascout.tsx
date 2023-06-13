@@ -551,7 +551,8 @@ function checkMove(board: number[][], x: number, y: number) {
 interface MoveResult {
     new_board: number[][] | null,
     winner: number,
-    move_valid: boolean
+    move_valid: boolean,
+    ai_move: { x: number, y: number }
 }
 
 // Операция хода, принимает на вход доску, кординаты хода и то чем играет игрок
@@ -559,13 +560,13 @@ function makeMove(board: number[][], x: number, y: number, player: number): Move
 
     // Если ход невозможен, возвращает доску без изменений
     if (!checkMove(board, x, y)) {
-        return { new_board: null, winner: 0, move_valid: false };
+        return { new_board: null, winner: 0, move_valid: false, ai_move: { x: 0, y: 0 } };
     }
 
     // Игрок победил своим ходом
     board[x][y] = player;
     if (checkWin(board, x, y)) {
-        return { new_board: board, winner: player, move_valid: true };
+        return { new_board: board, winner: player, move_valid: true, ai_move: { x: 0, y: 0 } };
     }
 
     // Ход ИИ
@@ -576,10 +577,10 @@ function makeMove(board: number[][], x: number, y: number, player: number): Move
     Cache.clear();
     StateCache.clear();
     if (checkWin(board, bestmove.i, bestmove.j)) {
-        return { new_board: board, winner: -player, move_valid: true };
+        return { new_board: board, winner: -player, move_valid: true, ai_move: { x: bestmove.i, y: bestmove.j } };
     }
 
-    return { new_board: board, winner: 0, move_valid: true };
+    return { new_board: board, winner: 0, move_valid: true, ai_move: { x: bestmove.i, y: bestmove.j } };
 }
 
 export default makeMove

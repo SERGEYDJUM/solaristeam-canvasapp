@@ -63,6 +63,7 @@ type State = {
   last_move_valid: boolean,
   can_move: boolean,
   playerSide: number,
+  last_ai_move: { x: number, y: number }
 }
 
 class App extends React.Component<never, State> {
@@ -79,6 +80,7 @@ class App extends React.Component<never, State> {
       winner: 0,
       can_move: true,
       playerSide: _.sample([-1, 1]) as number,
+      last_ai_move: { x: 0, y: 0 }
     }
 
     this.assistant = initializeAssistant(() => this.getStateForAssistant())
@@ -111,8 +113,11 @@ class App extends React.Component<never, State> {
     const state = {
       game_state: {
         game_status: game_status,
+        ai_move: this.state.last_ai_move
       }
     }
+
+    console.log("State sending: ", state)
     return state
   }
 
@@ -139,6 +144,7 @@ class App extends React.Component<never, State> {
       winner: 0,
       can_move: true,
       playerSide: -this.state.playerSide,
+      last_ai_move: { x: 0, y: 0 }
     });
   }
 
@@ -154,6 +160,7 @@ class App extends React.Component<never, State> {
         last_move_valid: movedata.move_valid,
         winner: movedata.winner,
         can_move: (movedata.winner == 0),
+        last_ai_move: movedata.ai_move
       });
       this._send_action("registered_move", null)
     }
