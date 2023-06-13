@@ -1,6 +1,6 @@
 import React from "react"
 import styled from "styled-components"
-import { createAssistant, createSmartappDebugger } from "@salutejs/client"
+import { AssistantAppState, createAssistant, createSmartappDebugger } from "@salutejs/client"
 import { AssistantClient } from "@salutejs/client"
 import { Board } from "./components"
 import { Button, TextL } from "@salutejs/plasma-ui"
@@ -46,7 +46,7 @@ interface Action {
   move: { x: number, y: number }
 }
 
-const initializeAssistant = (getState: () => object): AssistantClient => {
+const initializeAssistant = (getState: () => AssistantAppState): AssistantClient => {
   if (import.meta.env.DEV) {
     return createSmartappDebugger({
       token: import.meta.env.VITE_APP_TOKEN as string ?? "",
@@ -84,7 +84,7 @@ class App extends React.Component<never, State> {
     }
 
     this.assistant = initializeAssistant(() => this.getStateForAssistant())
-    this.assistant.on("data", (event) => {
+    this.assistant.on("data", (event: any) => {
       console.log(`assistant.on(data)`, event);
       const { action } = event
       this.dispatchAssistantAction(action);
@@ -93,7 +93,7 @@ class App extends React.Component<never, State> {
     this.handleClick.bind(this)
   }
 
-  getStateForAssistant(): object {
+  getStateForAssistant(): AssistantAppState {
     // Коды game_status
     // игра продолжается == 0
     // последний ход игрока был невалидным == 1
