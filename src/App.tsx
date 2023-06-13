@@ -154,15 +154,14 @@ class App extends React.Component<never, State> {
       this.state.can_move = false;
       console.log("Click processing: ", i, j);
       const movedata = makeMove(this.state.board.slice(), i, j, this.state.playerSide)
-      this.setState({
-        ...this.state,
-        board: movedata.new_board || this.state.board,
-        last_move_valid: movedata.move_valid,
-        winner: movedata.winner,
-        can_move: (movedata.winner == 0),
-        last_ai_move: movedata.ai_move
-      });
+      console.log("AI Move Calculated: ", movedata.ai_move)
+      this.state.board = movedata.new_board || this.state.board;
+      this.state.last_ai_move = movedata.ai_move
+      this.state.winner = movedata.winner
+      this.state.last_move_valid = movedata.move_valid
+      console.log("AI Moved: ", this.state.last_ai_move)
       this._send_action("registered_move", null)
+      this.state.can_move = (movedata.winner == 0)
     }
   }
 
