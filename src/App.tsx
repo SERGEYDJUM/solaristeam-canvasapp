@@ -161,7 +161,7 @@ class App extends React.Component<never, State> {
       this.state.winner = movedata.winner
       this.state.last_move_valid = movedata.move_valid
 
-      this.setState({...this.state});
+      this.setState({ ...this.state });
       console.log("AI Moved: ", this.state.last_ai_move)
       this._send_action("registered_move", null)
     }
@@ -186,6 +186,18 @@ class App extends React.Component<never, State> {
       });
   }
 
+  get_label_text(): string {
+    if (this.state.winner == this.state.playerSide) {
+      return "Вы победили";
+    }
+    else if (this.state.winner == -this.state.playerSide) {
+      return "Вы проиграли"
+    }
+    else {
+      return this.state.playerSide === 1 ? "Вы играете за крестики" : "Вы играете за нолики"
+    }
+  }
+
   render() {
     return (
       <>
@@ -193,7 +205,7 @@ class App extends React.Component<never, State> {
           <Container>
             <MenuContainer>
               <TextL>
-                {this.state.playerSide === 1 ? "Вы играете за крестики" : "Вы играете за нолики"}
+                {this.get_label_text()}
               </TextL>
               <Button text="Новая игра" size="s" view="overlay" onClick={() => this._send_action("reset_game", null)} />
             </MenuContainer>
