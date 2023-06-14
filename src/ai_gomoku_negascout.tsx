@@ -84,9 +84,13 @@ function limitsCreate(board: number[][]) {
     // В дальнейшем в качестве перспективных клеток рассматриваются клетки внутри и в радиусе 2 клеток
     // Поэтому если граница выходит за прямоугольник [[2, 2], [2, Columns - 3], [Rows - 3, Colums - 3], [Rows - 3, 2]] ее обрезаем
     min_x = Math.max(min_x, 2)
+    min_x = Math.min(min_x, 12)
     min_y = Math.max(min_y, 2)
+    min_y = Math.min(min_y, 12)
     max_x = Math.min(max_x, Rows - 3)
+    max_x = Math.max(max_x, 2)
     max_y = Math.min(max_y, Columns - 3)
+    max_y = Math.max(max_y, 2)
     return [min_x, min_y, max_x, max_y]
 }
 
@@ -161,10 +165,10 @@ function hashUpdate(hash: number, player: number, x: number, y: number) { //Об
 
 // Проверяет, является ли клетка удаленной, если в радиусе 2 клеток у клетки нет соседей, то она не перспективная
 function isRemoteCell(board: number[][], x: number, y: number) {
-    for (let i: number = x - 2; i <= y + 2; i++) {
+    for (let i: number = x - 2; i <= x + 2; i++) {
         if (i < 0 || i >= Rows)
             continue;
-        for (let j: number = x - 2; j <= y + 2; j++) {
+        for (let j: number = y - 2; j <= y + 2; j++) {
             if (j < 0 || j >= Columns)
                 continue;
             if (board[i][j] !== 0)
