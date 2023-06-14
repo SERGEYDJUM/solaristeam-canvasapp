@@ -28,22 +28,20 @@ type ShapeParams = {
   key: any
 }
 
-const Circle: FC<ShapeParams> = ({x, y, key}: ShapeParams) => (
+const Circle: FC<ShapeParams> = ({x, y}: ShapeParams) => (
   <KonvaCircle
     x={x + 15}
     y={y + 15}
-    key={key}
     radius={8}
     stroke="rgb(96, 96, 255)"
     strokeWidth={4}
   />
 )
 
-const Cross: FC<ShapeParams> = ({x, y, key}: ShapeParams) => (
+const Cross: FC<ShapeParams> = ({x, y}: ShapeParams) => (
   <Shape
     x={x}
     y={y}
-    key={key}
     sceneFunc={(context, shape) => {
       context.beginPath();
       context.moveTo(8, 8);
