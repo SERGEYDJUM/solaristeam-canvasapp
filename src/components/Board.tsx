@@ -8,7 +8,7 @@ type Props = {
 }
 
 const Container = styled.section`
-  margin-top: 24px;
+  margin-top: 16px;
   background-color: rgba(255,255,255,0.06);
   
   padding: 24px;

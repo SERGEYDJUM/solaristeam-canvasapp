@@ -3,9 +3,9 @@ import styled from "styled-components"
 import { AssistantAppState, createAssistant, createSmartappDebugger } from "@salutejs/client"
 import { AssistantClient } from "@salutejs/client"
 import { Board } from "./components"
-import { Button, TextL } from "@salutejs/plasma-ui"
+import {Button, TextM} from "@salutejs/plasma-ui"
 import _ from "lodash"
-import makeMove from "./ai_gomoku_negascout.tsx"
+import makeMove from "./ai_gomoku_negascout"
 
 
 const Layout = styled.div`
@@ -22,12 +22,11 @@ const Container = styled.div`
   margin-top: 24px;
 `
 
-const ModalContent = styled.section`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
+const MenuText = styled(TextM)`
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 50%;
+  white-space: nowrap;
 `
 
 const MenuContainer = styled.div`
@@ -38,7 +37,7 @@ const MenuContainer = styled.div`
   background-color: rgba(255,255,255,0.06);
   border-radius: 16px;
   width: 100%;
-  padding: 24px;
+  padding: 16px;
 `
 
 interface Action {
@@ -204,10 +203,15 @@ class App extends React.Component<never, State> {
         <Layout>
           <Container>
             <MenuContainer>
-              <TextL>
+              <MenuText>
                 {this.get_label_text()}
-              </TextL>
-              <Button text="Новая игра" size="s" view="overlay" onClick={() => this._send_action("reset_game", null)} />
+              </MenuText>
+              <Button
+                text="Новая игра"
+                size="s"
+                view="overlay"
+                onClick={() => this._send_action("reset_game", null)}
+              />
             </MenuContainer>
             <Board
               board={this.state.board}
