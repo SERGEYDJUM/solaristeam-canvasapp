@@ -1,6 +1,6 @@
-import React, {FC, useEffect, useRef, useState} from "react"
+import React, { FC, useEffect, useRef, useState } from "react"
 import styled from "styled-components"
-import {Layer, Line, Circle as KonvaCircle, Shape, Stage, Text} from "react-konva"
+import { Layer, Line, Circle as KonvaCircle, Shape, Stage, Text } from "react-konva"
 
 type Props = {
   board: Array<Array<number>>,
@@ -28,7 +28,7 @@ type ShapeParams = {
   key: any
 }
 
-const Circle: FC<ShapeParams> = ({x, y}: ShapeParams) => (
+const Circle: FC<ShapeParams> = ({ x, y }: ShapeParams) => (
   <KonvaCircle
     x={x + 15}
     y={y + 15}
@@ -38,7 +38,7 @@ const Circle: FC<ShapeParams> = ({x, y}: ShapeParams) => (
   />
 )
 
-const Cross: FC<ShapeParams> = ({x, y}: ShapeParams) => (
+const Cross: FC<ShapeParams> = ({ x, y }: ShapeParams) => (
   <Shape
     x={x}
     y={y}
@@ -56,13 +56,15 @@ const Cross: FC<ShapeParams> = ({x, y}: ShapeParams) => (
   />
 )
 
-const Board: FC<Props> = ({board, handleClick}: Props) => {
+const Board: FC<Props> = ({ board, handleClick }: Props) => {
   const handleClickCell = (e: any) => {
     console.log(e.evt)
 
-    const i = Math.floor( e.evt.layerX / 30 / scale)
+    const i = Math.floor(e.evt.layerX / 30 / scale)
     const j = Math.floor(e.evt.layerY / 30 / scale)
-    handleClick(i - 1, j - 1)
+    if (i >= 1 && i <= 15 && j >= 1 && j <= 15) {
+      handleClick(i - 1, j - 1)
+    }
   }
 
   const [scale, setScale] = useState<number>(1)
@@ -179,7 +181,7 @@ const Board: FC<Props> = ({board, handleClick}: Props) => {
       <Stage
         width={490 * scale}
         height={490 * scale}
-        scale={{x: scale, y: scale}}
+        scale={{ x: scale, y: scale }}
         onClick={handleClickCell}
       >
         <Layer>
