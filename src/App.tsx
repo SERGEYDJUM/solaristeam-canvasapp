@@ -193,7 +193,7 @@ class App extends React.Component<never, State> {
       return "Вы проиграли"
     }
     else {
-      return this.state.playerSide === 1 ? "Вы играете за ╳" : "Вы играете за ◯"
+      return this.state.playerSide === 1 ? "Вы играете за ⨉" : "Вы играете за ◯"
     }
   }
 
