@@ -3,7 +3,7 @@ import styled from "styled-components"
 import { AssistantAppState, createAssistant, createSmartappDebugger } from "@salutejs/client"
 import { AssistantClient } from "@salutejs/client"
 import { Board } from "./components"
-import {Button, TextM} from "@salutejs/plasma-ui"
+import { Button, TextM } from "@salutejs/plasma-ui"
 import _ from "lodash"
 import makeMove from "./ai_gomoku_negascout"
 
@@ -193,7 +193,7 @@ class App extends React.Component<never, State> {
       return "Вы проиграли"
     }
     else {
-      return this.state.playerSide === 1 ? "Вы играете за крестики" : "Вы играете за нолики"
+      return this.state.playerSide === 1 ? "Вы играете за ╳" : "Вы играете за ◯"
     }
   }
 
