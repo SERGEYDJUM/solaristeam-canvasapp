@@ -551,6 +551,18 @@ function checkMove(board: number[][], x: number, y: number) {
     return false;
 }
 
+// Проверка, есть ли свободные клетки
+function checkEmptyCells(board: number[][]): boolean {
+    for (let column = 0; column < 15; column++) {
+        for (let row = 0; row < 15; row++) {
+            if (board[row][column] == 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 interface MoveResult {
     new_board: number[][] | null,
     winner: number,
@@ -563,35 +575,35 @@ function makeMove(board: number[][], x: number, y: number, player: number): Move
 
     // Если ход невозможен, возвращает доску без изменений
     if (!checkMove(board, x, y)) {
-        return { new_board: null, winner: 0, move_valid: false, ai_move: { x: 0, y: 0 } };
+        return { new_board: null, winner: 0, move_valid: false, ai_move: { x: -1, y: -1 } };
     }
 
     // Игрок победил своим ходом
     board[x][y] = player;
     if (checkWin(board, x, y)) {
-        return { new_board: board, winner: player, move_valid: true, ai_move: { x: 0, y: 0 } };
+        return { new_board: board, winner: player, move_valid: true, ai_move: { x: -1, y: -1 } };
     }
 
     // Ход ИИ
-    const bestmove = negascout(board, -player, MaximumDepth, -Infinity, Infinity, hash(board), limitsCreate(board), x, y);
+    if (checkEmptyCells(board)) {
+        const bestmove = negascout(board, -player, MaximumDepth, -Infinity, Infinity, hash(board), limitsCreate(board), x, y);
 
-    board[bestmove.i][bestmove.j] = -player;
+        board[bestmove.i][bestmove.j] = -player;
 
-    Cache.clear();
-    StateCache.clear();
-    if (checkWin(board, bestmove.i, bestmove.j)) {
-        return { new_board: board, winner: -player, move_valid: true, ai_move: { x: bestmove.i, y: bestmove.j } };
-    }
-
-    for (let column = 0; column < 15; column++) {
-        for (let row = 0; row < 15; row++) {
-            if (board[row][column] != 0) {
+        Cache.clear();
+        StateCache.clear();
+        if (checkWin(board, bestmove.i, bestmove.j)) {
+            return { new_board: board, winner: -player, move_valid: true, ai_move: { x: bestmove.i, y: bestmove.j } };
+        } else {
+            if (checkEmptyCells(board)) {
                 return { new_board: board, winner: 0, move_valid: true, ai_move: { x: bestmove.i, y: bestmove.j } };
+            } else {
+                return { new_board: board, winner: 2, move_valid: true, ai_move: { x: bestmove.i, y: bestmove.j } }
             }
         }
+    } else {
+        return { new_board: board, winner: 2, move_valid: true, ai_move: { x: -1, y: -1 } }
     }
-
-    return { new_board: board, winner: 2, move_valid: true, ai_move: { x: bestmove.i, y: bestmove.j } };
 }
 
 export default makeMove
