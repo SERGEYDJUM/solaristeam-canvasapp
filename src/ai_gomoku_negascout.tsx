@@ -583,7 +583,15 @@ function makeMove(board: number[][], x: number, y: number, player: number): Move
         return { new_board: board, winner: -player, move_valid: true, ai_move: { x: bestmove.i, y: bestmove.j } };
     }
 
-    return { new_board: board, winner: 0, move_valid: true, ai_move: { x: bestmove.i, y: bestmove.j } };
+    for (let column = 0; column < 15; column++) {
+        for (let row = 0; row < 15; row++) {
+            if (board[row][column] != 0) {
+                return { new_board: board, winner: 0, move_valid: true, ai_move: { x: bestmove.i, y: bestmove.j } };
+            }
+        }
+    }
+
+    return { new_board: board, winner: 2, move_valid: true, ai_move: { x: bestmove.i, y: bestmove.j } };
 }
 
 export default makeMove

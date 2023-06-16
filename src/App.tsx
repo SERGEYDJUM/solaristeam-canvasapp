@@ -104,6 +104,8 @@ class App extends React.Component<never, State> {
         game_status = 2;
       } else if (this.state.winner == -this.state.playerSide) {
         game_status = 3
+      } else if (this.state.winner == 2) {
+        game_status = 4
       }
     } else {
       game_status = 1;
@@ -191,6 +193,9 @@ class App extends React.Component<never, State> {
     }
     else if (this.state.winner == -this.state.playerSide) {
       return "Вы проиграли"
+    }
+    else if (this.state.winner == 2) {
+      return "Ничья"
     }
     else {
       return this.state.playerSide === 1 ? "Вы играете за ⨉" : "Вы играете за ◯"
